@@ -50,7 +50,7 @@ footer a{color:var(--rose-d);text-decoration:none;font-weight:600}
   <img src="fotos/foto_01.jpg" alt="Floreria Yufraka" style="width:min(520px,92vw);border-radius:18px;margin:0 auto 16px;display:block;background:#111"/>
   <h1>Flores que nacen del corazon</h1>
   <p>Elige el ramo, ve el precio, envio o recoger en local.</p>
-  <p class="zonas">Entregamos en <b>Tampico</b>, <b>Madero</b>, <b>Altamira</b> y <b>Cd. Victoria</b>.</p>
+  <p class="zonas">Entregamos en <b>Tampico</b>, <b>Madero</b> y <b>Altamira</b>.</p>
 </section>
 <section id="catalogo" class="grid"></section>
 <div class="drawer" id="drawer" onclick="if(event.target===this)closeCart()">
@@ -72,7 +72,6 @@ footer a{color:var(--rose-d);text-decoration:none;font-weight:600}
   <option value="Tampico">Tampico</option>
   <option value="Ciudad Madero">Ciudad Madero</option>
   <option value="Altamira">Altamira</option>
-  <option value="Ciudad Victoria">Ciudad Victoria</option>
 </select>
 <input id="dir" placeholder="Calle, numero, colonia"/>
 <button class="ghost" type="button" onclick="usarUbicacion()">Usar mi ubicacion</button>
@@ -90,23 +89,21 @@ footer a{color:var(--rose-d);text-decoration:none;font-weight:600}
 </div>
 </div>
 <footer>
-  Yufraka · Tampico, Madero, Altamira y Cd. Victoria<br>
+  Yufraka · Tampico, Madero y Altamira<br>
   Pagina elaborada por <a href="https://kaymaxllc.com" target="_blank" rel="noopener">KAYMAX</a>
 </footer>
 <script>
 const CFG={wa:"5218341383407",envio:80,mpLink:""};
 let pin=null;
 const PRODUCTS=[
-{id:"r50",name:"50 rosas rojas",desc:"Buchon de 50 rosas",price:900,img:"fotos/foto_11.jpg"},
-{id:"r50-astro",name:"50 rosas + astromelia",desc:"Con astromelia",price:1000,img:"fotos/foto_02.jpg"},
-{id:"r50-nube",name:"50 rosas + nube",desc:"Con nieve",price:1000,img:"fotos/foto_03.jpg"},
-{id:"r100",name:"100 rosas rojas",desc:"Buchon grande",price:1800,img:"fotos/foto_12.jpg"},
-{id:"docena-nieve",name:"Docena roja con nieve",desc:"Wrap negro",price:450,img:"fotos/foto_06.jpg"},
+{id:"r50",name:"50 rosas rojas",desc:"Buchon de 50 rosas",price:700,img:"fotos/foto_11.jpg"},
+{id:"r24-follaje",name:"24 rosas rojas con follaje",desc:"Con astromelia y follaje",price:450,img:"fotos/foto_02.jpg"},
+{id:"r50-nube",name:"50 rosas rojas con nube",desc:"Con nieve",price:800,img:"fotos/foto_03.jpg"},
+{id:"r12",name:"12 rosas rojas",desc:"Wrap negro",price:250,img:"fotos/foto_06.jpg"},
 {id:"rojo-blanco",name:"Rojo y blanco",desc:"Astromelia blanca",price:480,img:"fotos/foto_05.jpg"},
-{id:"rosas-pink",name:"Rosas pink",desc:"Con nieve",price:520,img:"fotos/foto_04.jpg"},
-{id:"tricolor",name:"Ramo tricolor",desc:"Rojo, rosa y blanco",price:750,img:"fotos/foto_07.jpg"},
-{id:"pink-astro",name:"Pink con astromelia",desc:"Rosas rosa",price:580,img:"fotos/foto_10.jpg"},
-{id:"pastel-astro",name:"Pastel con astromelia",desc:"Rosa y blanco",price:480,img:"fotos/foto_13.jpg"},
+{id:"rosas-pink",name:"24 rosas rosas con nube",desc:"Pink con nieve",price:500,img:"fotos/foto_04.jpg"},
+{id:"tricolor",name:"Ramo tricolor",desc:"Rojo, rosa y blanco",price:700,img:"fotos/foto_07.jpg"},
+{id:"pink-astro",name:"24 rosas rosas con follaje",desc:"Pink con astromelia",price:450,img:"fotos/foto_10.jpg"},
 {id:"blanco-lila",name:"Blanco y lila",desc:"Crema y nieve",price:520,img:"fotos/foto_14.jpg"},
 {id:"fucsia",name:"Rosas fucsia",desc:"Wrap rosa",price:700,img:"fotos/foto_16.jpg"},
 {id:"pink-nieve",name:"Pink y nieve",desc:"Pink y crema",price:680,img:"fotos/foto_22.jpg"},
