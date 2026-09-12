@@ -84,6 +84,7 @@ footer a{color:var(--rose-d);text-decoration:none;font-weight:600}
 <div class="row"><span id="envLabel">Envio</span><b id="env">$80</b></div>
 <div class="row"><span>Total</span><b id="tot">$0</b></div>
 <button class="pay" onclick="pagarWhatsApp()">Pedir por WhatsApp</button>
+<button class="ghost" type="button" onclick="cancelarPedido()">Cancelar pedido</button>
 <button class="ghost" type="button" onclick="mandarChofer()">Mandar mapa al chofer</button>
 <p class="note">WhatsApp Francisco +52 1 834 138 3407. La liga de pago se agrega cuando este la cuenta.</p>
 </div>
@@ -162,6 +163,14 @@ function syncFul(){
 }
 function openCart(){document.getElementById("drawer").classList.add("open")}
 function closeCart(){document.getElementById("drawer").classList.remove("open")}
+function cancelarPedido(){
+  cart=[];saveCart();pin=null;
+  document.getElementById("nombre").value="";
+  document.getElementById("tel").value="";
+  document.getElementById("dir").value="";
+  document.getElementById("nota").value="";
+  closeCart();
+}
 function valid(){
   if(!cart.length){alert("Elige un arreglo");return false}
   if(!document.getElementById("nombre").value.trim()||!document.getElementById("tel").value.trim()){alert("Nombre y celular");return false}
