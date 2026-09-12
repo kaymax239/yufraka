@@ -90,8 +90,7 @@ footer a{color:var(--rose-d);text-decoration:none;font-weight:600}
 </div>
 <footer>
   Yufraka · Tampico, Madero, Altamira y Cd. Victoria<br>
-  Pagina elaborada por <a href="https://kaymaxllc.com" target="_blank" rel="noopener">KAYMAX</a><br>
-  <button class="ghost" style="max-width:280px;margin:12px auto;display:block" onclick="resetPedidos()">Borrar pedidos de prueba</button>
+  Pagina elaborada por <a href="https://kaymaxllc.com" target="_blank" rel="noopener">KAYMAX</a>
 </footer>
 <script>
 const CFG={wa:"5218341383407",envio:80,mpLink:""};
@@ -185,15 +184,7 @@ function pagarWhatsApp(){
   closeCart();
   window.open("https://wa.me/"+CFG.wa+"?text="+text,"_blank");
 }
-function resetPedidos(){
-  localStorage.removeItem("yu_cart");
-  localStorage.removeItem("yu_orders");
-  cart=[];
-  render();
-  alert("Pedidos y carrito borrados en este aparato.");
-}
 render();
-if(location.hash==="#reset"){resetPedidos()}
 </script>
 </body>
 </html>
