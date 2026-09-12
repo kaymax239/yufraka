@@ -15,7 +15,8 @@ header{position:sticky;top:0;z-index:20;background:rgba(251,247,244,.95);border-
 .cart-btn{background:var(--rose);color:#fff;border:0;border-radius:999px;padding:10px 16px;cursor:pointer}
 .hero{padding:40px 22px 16px;text-align:center}
 .hero h1{font-family:Cormorant Garamond,serif;font-size:clamp(32px,6vw,56px)}
-.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:18px;padding:10px 22px 80px;max-width:1100px;margin:0 auto}
+.zonas{margin-top:10px;color:#6b5558;font-size:14px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:18px;padding:10px 22px 40px;max-width:1100px;margin:0 auto}
 .card{background:#fff;border-radius:18px;overflow:hidden;box-shadow:0 8px 24px rgba(90,40,50,.08);display:flex;flex-direction:column}
 .card img{width:100%;height:210px;object-fit:cover;background:#f3d5de}
 .card .body{padding:14px;display:flex;flex-direction:column;gap:6px;flex:1}
@@ -29,10 +30,14 @@ header{position:sticky;top:0;z-index:20;background:rgba(251,247,244,.95);border-
 .fulfill label,.when label{border:1px solid #ead7dc;border-radius:12px;padding:10px;cursor:pointer;text-align:center}
 .fulfill input,.when input{display:none}
 .fulfill label:has(input:checked),.when label:has(input:checked){border-color:var(--rose);background:var(--blush)}
-input,textarea{width:100%;padding:10px 12px;border:1px solid #e4d4d8;border-radius:10px;font:inherit;margin:6px 0}
+input,textarea,select{width:100%;padding:10px 12px;border:1px solid #e4d4d8;border-radius:10px;font:inherit;margin:6px 0}
 .pay{width:100%;background:var(--rose);color:#fff;border:0;border-radius:14px;padding:14px;margin-top:8px;cursor:pointer}
-footer{text-align:center;padding:24px;color:#8a7377;font-size:13px}
-</style></head>
+.ghost{width:100%;background:#fff;border:1px solid #d9c4c8;border-radius:14px;padding:12px;margin-top:8px;cursor:pointer}
+.note{font-size:12px;color:#7a6468;margin-top:8px}
+footer{text-align:center;padding:28px 16px 40px;color:#8a7377;font-size:13px}
+footer a{color:var(--rose-d);text-decoration:none;font-weight:600}
+</style>
+</head>
 <body>
 <header>
   <div class="brand">Yufraka<small>Flores que nacen del corazon</small></div>
@@ -40,7 +45,8 @@ footer{text-align:center;padding:24px;color:#8a7377;font-size:13px}
 </header>
 <section class="hero">
   <h1>Flores que nacen del corazon</h1>
-  <p>Elige el ramo, ve el precio, envio o recoger.</p>
+  <p>Elige el ramo, ve el precio, envio o recoger en local.</p>
+  <p class="zonas">Entregamos en <b>Tampico</b>, <b>Madero</b>, <b>Altamira</b> y <b>Cd. Victoria</b>.</p>
 </section>
 <section id="catalogo" class="grid"></section>
 <div class="drawer" id="drawer" onclick="if(event.target===this)closeCart()">
@@ -57,74 +63,118 @@ footer{text-align:center;padding:24px;color:#8a7377;font-size:13px}
 </div>
 <input id="nombre" placeholder="Tu nombre"/>
 <input id="tel" placeholder="WhatsApp / celular"/>
-<input id="dir" placeholder="Direccion de entrega"/>
-<textarea id="nota" rows="2" placeholder="Dedicatoria"></textarea>
+<div id="geoBox">
+<select id="ciudad">
+  <option value="Tampico">Tampico</option>
+  <option value="Ciudad Madero">Ciudad Madero</option>
+  <option value="Altamira">Altamira</option>
+  <option value="Ciudad Victoria">Ciudad Victoria</option>
+</select>
+<input id="dir" placeholder="Calle, numero, colonia"/>
+<button class="ghost" type="button" onclick="usarUbicacion()">Usar mi ubicacion</button>
+<button class="ghost" type="button" onclick="abrirMapa()">Abrir mapa</button>
+<p class="note" id="mapStatus">Escribe la direccion o sube tu ubicacion. El mapa se manda al chofer.</p>
+</div>
+<textarea id="nota" rows="2" placeholder="Dedicatoria (opcional)"></textarea>
 <div class="row"><span>Subtotal</span><b id="sub">$0</b></div>
 <div class="row"><span id="envLabel">Envio</span><b id="env">$80</b></div>
 <div class="row"><span>Total</span><b id="tot">$0</b></div>
 <button class="pay" onclick="pagarWhatsApp()">Pedir por WhatsApp</button>
-<p style="font-size:12px;color:#7a6468;margin-top:8px">WhatsApp Francisco +52 1 834 138 3407</p>
-</div></div>
-<footer>Yufraka · Francisco Gabriel Cruz Victoriano</footer>
+<button class="ghost" type="button" onclick="mandarChofer()">Mandar mapa al chofer</button>
+<p class="note">WhatsApp Francisco +52 1 834 138 3407. La liga de pago se agrega cuando este la cuenta.</p>
+</div>
+</div>
+<footer>
+  Yufraka · Tampico, Madero, Altamira y Cd. Victoria<br>
+  Pagina elaborada por <a href="https://kaymaxllc.com" target="_blank" rel="noopener">KAYMAX</a>
+</footer>
 <script>
-const CFG={wa:'5218341383407',envio:80};
+const CFG={wa:"5218341383407",envio:80,mpLink:""};
+let pin=null;
 const PRODUCTS=[
-{id:'r50',name:'50 rosas rojas',desc:'Buchon de 50 rosas',price:900,img:'fotos/foto_11.jpg'},
-{id:'r50-astro',name:'50 rosas + astromelia',desc:'Con astromelia',price:1000,img:'fotos/foto_02.jpg'},
-{id:'r50-nube',name:'50 rosas + nube',desc:'Con nieve',price:1000,img:'fotos/foto_03.jpg'},
-{id:'r100',name:'100 rosas rojas',desc:'Buchon grande',price:1800,img:'fotos/foto_12.jpg'},
-{id:'docena-nieve',name:'Docena roja con nieve',desc:'Wrap negro',price:450,img:'fotos/foto_06.jpg'},
-{id:'rojo-blanco',name:'Rojo y blanco',desc:'Astromelia blanca',price:480,img:'fotos/foto_05.jpg'},
-{id:'rosas-pink',name:'Rosas pink',desc:'Con nieve',price:520,img:'fotos/foto_04.jpg'},
-{id:'tricolor',name:'Ramo tricolor',desc:'Rojo rosa blanco',price:750,img:'fotos/foto_07.jpg'},
-{id:'pink-astro',name:'Pink con astromelia',desc:'Rosas rosa',price:580,img:'fotos/foto_10.jpg'},
-{id:'pastel-astro',name:'Pastel con astromelia',desc:'Rosa y blanco',price:480,img:'fotos/foto_13.jpg'},
-{id:'blanco-lila',name:'Blanco y lila',desc:'Crema y nieve',price:520,img:'fotos/foto_14.jpg'},
-{id:'fucsia',name:'Rosas fucsia',desc:'Wrap rosa',price:700,img:'fotos/foto_16.jpg'},
-{id:'pink-nieve',name:'Pink y nieve',desc:'Pink y crema',price:680,img:'fotos/foto_22.jpg'},
-{id:'gerbera-mix',name:'Mix gerbera',desc:'Gerberas y rosas',price:720,img:'fotos/foto_30.jpg'},
-{id:'novia',name:'Quieres ser mi novia?',desc:'Liston',price:900,img:'fotos/foto_37.jpg'},
-{id:'girasoles',name:'Girasoles / gerbera amarilla',desc:'Ramo amarillo',price:450,img:'fotos/foto_45.jpg'}
+{id:"r50",name:"50 rosas rojas",desc:"Buchon de 50 rosas",price:900,img:"fotos/foto_11.jpg"},
+{id:"r50-astro",name:"50 rosas + astromelia",desc:"Con astromelia",price:1000,img:"fotos/foto_02.jpg"},
+{id:"r50-nube",name:"50 rosas + nube",desc:"Con nieve",price:1000,img:"fotos/foto_03.jpg"},
+{id:"r100",name:"100 rosas rojas",desc:"Buchon grande",price:1800,img:"fotos/foto_12.jpg"},
+{id:"docena-nieve",name:"Docena roja con nieve",desc:"Wrap negro",price:450,img:"fotos/foto_06.jpg"},
+{id:"rojo-blanco",name:"Rojo y blanco",desc:"Astromelia blanca",price:480,img:"fotos/foto_05.jpg"},
+{id:"rosas-pink",name:"Rosas pink",desc:"Con nieve",price:520,img:"fotos/foto_04.jpg"},
+{id:"tricolor",name:"Ramo tricolor",desc:"Rojo, rosa y blanco",price:750,img:"fotos/foto_07.jpg"},
+{id:"pink-astro",name:"Pink con astromelia",desc:"Rosas rosa",price:580,img:"fotos/foto_10.jpg"},
+{id:"pastel-astro",name:"Pastel con astromelia",desc:"Rosa y blanco",price:480,img:"fotos/foto_13.jpg"},
+{id:"blanco-lila",name:"Blanco y lila",desc:"Crema y nieve",price:520,img:"fotos/foto_14.jpg"},
+{id:"fucsia",name:"Rosas fucsia",desc:"Wrap rosa",price:700,img:"fotos/foto_16.jpg"},
+{id:"pink-nieve",name:"Pink y nieve",desc:"Pink y crema",price:680,img:"fotos/foto_22.jpg"},
+{id:"gerbera-mix",name:"Mix gerbera",desc:"Gerberas y rosas",price:720,img:"fotos/foto_30.jpg"},
+{id:"novia",name:"Quieres ser mi novia?",desc:"Liston",price:900,img:"fotos/foto_37.jpg"},
+{id:"girasoles",name:"Girasoles / gerbera amarilla",desc:"Ramo amarillo",price:450,img:"fotos/foto_45.jpg"}
 ];
-let cart=JSON.parse(localStorage.getItem('yu_cart')||'[]');
-function money(n){return '$'+Number(n).toLocaleString('es-MX')}
-function saveCart(){localStorage.setItem('yu_cart',JSON.stringify(cart));render()}
+let cart=JSON.parse(localStorage.getItem("yu_cart")||"[]");
+function money(n){return "$"+Number(n).toLocaleString("es-MX")}
+function saveCart(){localStorage.setItem("yu_cart",JSON.stringify(cart));render()}
 function add(id){const p=PRODUCTS.find(x=>x.id===id);const i=cart.find(x=>x.id===id);if(i)i.qty++;else cart.push({id:p.id,name:p.name,price:p.price,qty:1});saveCart()}
 function qty(id,d){const i=cart.find(x=>x.id===id);if(!i)return;i.qty+=d;if(i.qty<=0)cart=cart.filter(x=>x.id!==id);saveCart()}
 function subtotal(){return cart.reduce((s,i)=>s+i.price*i.qty,0)}
-function fulfillment(){return document.querySelector('input[name=ful]:checked').value}
-function envio(){return fulfillment()==='envio'?CFG.envio:0}
+function fulfillment(){return document.querySelector("input[name=ful]:checked").value}
+function envio(){return fulfillment()==="envio"?CFG.envio:0}
 function total(){return subtotal()+envio()}
+function ciudad(){return document.getElementById("ciudad").value}
+function dirTexto(){return document.getElementById("dir").value.trim()}
+function mapaUrl(){
+  if(pin) return "https://www.google.com/maps?q="+pin.lat+","+pin.lng;
+  return "https://www.google.com/maps/search/?api=1&query="+encodeURIComponent(dirTexto()+" "+ciudad()+" Tamaulipas");
+}
+function usarUbicacion(){
+  if(!navigator.geolocation){alert("Este aparato no da ubicacion");return}
+  document.getElementById("mapStatus").textContent="Pidiendo ubicacion...";
+  navigator.geolocation.getCurrentPosition(function(pos){
+    pin={lat:pos.coords.latitude,lng:pos.coords.longitude};
+    document.getElementById("dir").value="Ubicacion GPS "+pin.lat.toFixed(5)+", "+pin.lng.toFixed(5);
+    document.getElementById("mapStatus").textContent="Ubicacion lista. Abre el mapa o mandalo al chofer.";
+  },function(){document.getElementById("mapStatus").textContent="No se pudo leer el GPS. Escribe la direccion.";});
+}
+function abrirMapa(){
+  if(fulfillment()==="envio" && !dirTexto() && !pin){alert("Pon direccion o usa ubicacion");return}
+  window.open(mapaUrl(),"_blank");
+}
+function mandarChofer(){
+  if(fulfillment()!=="envio"){alert("El mapa es para envios");return}
+  if(!dirTexto() && !pin){alert("Falta direccion o ubicacion");return}
+  const text=encodeURIComponent("Yufraka entrega "+ciudad()+"%0A"+dirTexto()+"%0AMapa: "+mapaUrl());
+  window.open("https://wa.me/"+CFG.wa+"?text="+text,"_blank");
+}
 function render(){
- document.getElementById('catalogo').innerHTML=PRODUCTS.map(p=>`<article class="card"><img src="${p.img}" alt="${p.name}" onerror="this.style.background='#f3d5de'"/><div class="body"><h3>${p.name}</h3><p style="color:#7a6468;font-size:13px">${p.desc}</p><div class="price">${money(p.price)}</div><button onclick="add('${p.id}')">Elegir</button></div></article>`).join('');
- document.getElementById('count').textContent=cart.reduce((s,i)=>s+i.qty,0);
- document.getElementById('cartList').innerHTML=cart.length?cart.map(i=>`<div class="row"><div>${i.name}<br><small>${money(i.price)} x ${i.qty}</small></div><div><button onclick="qty('${i.id}',-1)">-</button> <button onclick="qty('${i.id}',1)">+</button></div></div>`).join(''):'<p>Aun no eliges un arreglo.</p>';
- syncFul();
+  document.getElementById("catalogo").innerHTML=PRODUCTS.map(p=>`<article class="card"><img src="${p.img}" alt="${p.name}"/><div class="body"><h3>${p.name}</h3><p style="color:#7a6468;font-size:13px">${p.desc}</p><div class="price">${money(p.price)}</div><button onclick="add('${p.id}')">Elegir</button></div></article>`).join("");
+  document.getElementById("count").textContent=cart.reduce((s,i)=>s+i.qty,0);
+  document.getElementById("cartList").innerHTML=cart.length?cart.map(i=>`<div class="row"><div>${i.name}<br><small>${money(i.price)} x ${i.qty}</small></div><div><button onclick="qty('${i.id}',-1)">-</button> <button onclick="qty('${i.id}',1)">+</button></div></div>`).join(""):"<p>Aun no eliges un arreglo.</p>";
+  syncFul();
 }
 function syncFul(){
- document.getElementById('env').textContent=money(envio());
- document.getElementById('envLabel').textContent=fulfillment()==='envio'?'Envio':'Recoleccion';
- document.getElementById('dir').style.display=fulfillment()==='envio'?'block':'none';
- document.getElementById('sub').textContent=money(subtotal());
- document.getElementById('tot').textContent=money(total());
+  document.getElementById("env").textContent=money(envio());
+  document.getElementById("envLabel").textContent=fulfillment()==="envio"?"Envio":"Recoleccion";
+  document.getElementById("geoBox").style.display=fulfillment()==="envio"?"block":"none";
+  document.getElementById("sub").textContent=money(subtotal());
+  document.getElementById("tot").textContent=money(total());
 }
-function openCart(){document.getElementById('drawer').classList.add('open')}
-function closeCart(){document.getElementById('drawer').classList.remove('open')}
+function openCart(){document.getElementById("drawer").classList.add("open")}
+function closeCart(){document.getElementById("drawer").classList.remove("open")}
 function valid(){
- if(!cart.length){alert('Elige un arreglo');return false}
- if(!document.getElementById('nombre').value.trim()||!document.getElementById('tel').value.trim()){alert('Nombre y celular');return false}
- if(fulfillment()==='envio'&&!document.getElementById('dir').value.trim()){alert('Falta la direccion');return false}
- return true;
+  if(!cart.length){alert("Elige un arreglo");return false}
+  if(!document.getElementById("nombre").value.trim()||!document.getElementById("tel").value.trim()){alert("Nombre y celular");return false}
+  if(fulfillment()==="envio"&&!dirTexto()){alert("Falta la direccion o la ubicacion");return false}
+  return true;
 }
 function pagarWhatsApp(){
- if(!valid())return;
- const order={id:'YF-'+Date.now().toString(36).toUpperCase(),items:cart,fulfillment:fulfillment(),when:document.querySelector('input[name=cuando]:checked').value,nombre:document.getElementById('nombre').value.trim(),tel:document.getElementById('tel').value.trim(),total:total()};
- const list=JSON.parse(localStorage.getItem('yu_orders')||'[]');list.unshift(order);localStorage.setItem('yu_orders',JSON.stringify(list));
- const lines=order.items.map(i=>`• ${i.qty}x ${i.name} (${money(i.price)})`).join('%0A');
- const text=encodeURIComponent(`Pedido Yufraka ${order.id}%0A${lines}%0A${order.fulfillment==='envio'?'Envio':'Recoger'} — ${order.when}%0ATotal ${money(order.total)}%0A${order.nombre} ${order.tel}`);
- cart=[];saveCart();
- window.open('https://wa.me/'+CFG.wa+'?text='+text,'_blank');
+  if(!valid())return;
+  const order={id:"YF-"+Date.now().toString(36).toUpperCase(),items:cart,fulfillment:fulfillment(),when:document.querySelector("input[name=cuando]:checked").value,nombre:document.getElementById("nombre").value.trim(),tel:document.getElementById("tel").value.trim(),ciudad:ciudad(),dir:dirTexto(),mapa:fulfillment()==="envio"?mapaUrl():"",total:total()};
+  const list=JSON.parse(localStorage.getItem("yu_orders")||"[]");list.unshift(order);localStorage.setItem("yu_orders",JSON.stringify(list));
+  const lines=order.items.map(i=>`• ${i.qty}x ${i.name} (${money(i.price)})`).join("%0A");
+  const mapa=order.mapa?("%0AMapa chofer: "+order.mapa):"";
+  const text=encodeURIComponent("Pedido Yufraka "+order.id+"%0A"+lines+"%0A"+(order.fulfillment==="envio"?("Envio "+order.ciudad):"Recoger")+" — "+order.when+"%0A"+(order.dir||"")+mapa+"%0ATotal "+money(order.total)+"%0A"+order.nombre+" "+order.tel);
+  cart=[];saveCart();
+  window.open("https://wa.me/"+CFG.wa+"?text="+text,"_blank");
 }
 render();
 </script>
-</body></html>
+</body>
+</html>
