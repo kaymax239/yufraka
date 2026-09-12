@@ -3,11 +3,12 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>Yufraka · Pako</title>
+<meta name="robots" content="noindex,nofollow"/>
+<title>Yufraka</title>
 <style>
 body{font-family:sans-serif;background:#fbf7f4;color:#2a1f24;margin:0;padding:20px;max-width:720px;margin:0 auto}
 h1{font-size:28px}
-input{padding:8px;border:1px solid #e4d4d8;border-radius:8px;width:110px;font:inherit}
+input{padding:8px;border:1px solid #e4d4d8;border-radius:8px;width:140px;font:inherit}
 button{background:#9b3d54;color:#fff;border:0;border-radius:10px;padding:10px 14px;cursor:pointer;margin:6px 6px 0 0;font:inherit}
 .ghost{background:#fff;color:#2a1f24;border:1px solid #d9c4c8}
 .row{display:flex;gap:10px;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid #f0e6e8}
@@ -17,24 +18,22 @@ button{background:#9b3d54;color:#fff;border:0;border-radius:10px;padding:10px 14
 </head>
 <body>
 <div id="login">
-  <h1>Pako</h1>
-  <p>Solo el dueno. PIN.</p>
-  <input id="pin" type="password" placeholder="PIN"/>
-  <button onclick="entrar()">Entrar</button>
+  <h1>Entrar</h1>
+  <input id="pin" type="password" inputmode="numeric" autocomplete="off"/>
+  <button onclick="entrar()">OK</button>
 </div>
 <div id="app" class="hid">
-  <h1>Pako · Yufraka</h1>
-  <p><a href="/">Ver tienda</a></p>
-  <h2>Pedidos en este celular / compu</h2>
-  <div id="orders">Sin pedidos en este aparato.</div>
+  <h1>Yufraka</h1>
+  <p><a href="/">Tienda</a></p>
+  <h2>Pedidos en este aparato</h2>
+  <div id="orders"></div>
   <h2>Precios</h2>
-  <p>Cambia y guarda. En esta computadora se ven ya. Para que salgan en la web de todos, avisame y los publico.</p>
   <div id="prices"></div>
-  <button onclick="guardar()">Guardar precios aqui</button>
+  <button onclick="guardar()">Guardar</button>
   <button class="ghost" onclick="salir()">Salir</button>
 </div>
 <script>
-const PIN="3407";
+const H="ab58ad627e6b1b11fc49d4b8a19821de9d8d4aee520820328cfe03ddf5e83872";
 const DEFAULTS=[
 {id:"r50",name:"50 rosas rojas",price:900},
 {id:"r50-astro",name:"50 rosas + astromelia",price:1000},
@@ -53,31 +52,36 @@ const DEFAULTS=[
 {id:"novia",name:"Quieres ser mi novia?",price:900},
 {id:"girasoles",name:"Girasoles / gerbera amarilla",price:450}
 ];
-function entrar(){
-  if(document.getElementById("pin").value!==PIN){alert("PIN incorrecto");return}
-  sessionStorage.setItem("yu_pako","1");
+async function sha(t){
+  const b=new TextEncoder().encode(t);
+  const d=await crypto.subtle.digest("SHA-256",b);
+  return Array.from(new Uint8Array(d)).map(x=>x.toString(16).padStart(2,"0")).join("");
+}
+async function entrar(){
+  const v=document.getElementById("pin").value.trim();
+  if(await sha(v)!==H){alert("No");return}
+  sessionStorage.setItem("yu_ok","1");
   show();
 }
-function salir(){sessionStorage.removeItem("yu_pako");location.reload()}
+function salir(){sessionStorage.removeItem("yu_ok");location.reload()}
 function prices(){
-  const saved=JSON.parse(localStorage.getItem("yu_prices")||"null");
-  const map=saved||{};
-  return DEFAULTS.map(p=>({...p,price:map[p.id]!=null?map[p.id]:p.price}));
+  const saved=JSON.parse(localStorage.getItem("yu_prices")||"null")||{};
+  return DEFAULTS.map(p=>({...p,price:saved[p.id]!=null?saved[p.id]:p.price}));
 }
 function show(){
   document.getElementById("login").classList.add("hid");
   document.getElementById("app").classList.remove("hid");
   document.getElementById("prices").innerHTML=prices().map(p=>`<div class="row"><span>${p.name}</span><input data-id="${p.id}" type="number" value="${p.price}"/></div>`).join("");
   const list=JSON.parse(localStorage.getItem("yu_orders")||"[]");
-  document.getElementById("orders").innerHTML=list.length?list.map(o=>`<div class="card"><b>${o.id}</b> · ${o.when||""} · ${o.fulfillment||""}<br>${(o.items||[]).map(i=>i.qty+"x "+i.name).join(", ")}<br>${o.nombre||""} ${o.tel||""}<br>${o.dir||""}<br>Total $${o.total||0}</div>`).join(""):"Sin pedidos en este aparato. El pedido de verdad llega por WhatsApp.";
+  document.getElementById("orders").innerHTML=list.length?list.map(o=>`<div class="card"><b>${o.id}</b> · ${o.when||""}<br>${(o.items||[]).map(i=>i.qty+"x "+i.name).join(", ")}<br>${o.nombre||""} ${o.tel||""}<br>Total $${o.total||0}</div>`).join(""):"Los pedidos de clientes llegan por WhatsApp.";
 }
 function guardar(){
   const map={};
   document.querySelectorAll("#prices input").forEach(el=>{map[el.dataset.id]=Number(el.value||0)});
   localStorage.setItem("yu_prices",JSON.stringify(map));
-  alert("Precios guardados en este aparato.");
+  alert("Guardado en este aparato.");
 }
-if(sessionStorage.getItem("yu_pako")==="1") show();
+if(sessionStorage.getItem("yu_ok")==="1") show();
 </script>
 </body>
 </html>
