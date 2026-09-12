@@ -86,7 +86,8 @@ footer a{color:var(--rose-d);text-decoration:none;font-weight:600}
 </div>
 <footer>
   Yufraka · Tampico, Madero, Altamira y Cd. Victoria<br>
-  Pagina elaborada por <a href="https://kaymaxllc.com" target="_blank" rel="noopener">KAYMAX</a>
+  Pagina elaborada por <a href="https://kaymaxllc.com" target="_blank" rel="noopener">KAYMAX</a><br>
+  <button class="ghost" style="max-width:280px;margin:12px auto;display:block" onclick="resetPedidos()">Borrar pedidos de prueba</button>
 </footer>
 <script>
 const CFG={wa:"5218341383407",envio:80,mpLink:""};
@@ -168,13 +169,27 @@ function pagarWhatsApp(){
   if(!valid())return;
   const order={id:"YF-"+Date.now().toString(36).toUpperCase(),items:cart,fulfillment:fulfillment(),when:document.querySelector("input[name=cuando]:checked").value,nombre:document.getElementById("nombre").value.trim(),tel:document.getElementById("tel").value.trim(),ciudad:ciudad(),dir:dirTexto(),mapa:fulfillment()==="envio"?mapaUrl():"",total:total()};
   const list=JSON.parse(localStorage.getItem("yu_orders")||"[]");list.unshift(order);localStorage.setItem("yu_orders",JSON.stringify(list));
-  const lines=order.items.map(i=>`• ${i.qty}x ${i.name} (${money(i.price)})`).join("%0A");
+  const lines=order.items.map(i=>"\u2022 "+i.qty+"x "+i.name+" ("+money(i.price)+")").join("%0A");
   const mapa=order.mapa?("%0AMapa chofer: "+order.mapa):"";
-  const text=encodeURIComponent("Pedido Yufraka "+order.id+"%0A"+lines+"%0A"+(order.fulfillment==="envio"?("Envio "+order.ciudad):"Recoger")+" — "+order.when+"%0A"+(order.dir||"")+mapa+"%0ATotal "+money(order.total)+"%0A"+order.nombre+" "+order.tel);
+  const text=encodeURIComponent("Pedido Yufraka "+order.id+"%0A"+lines+"%0A"+(order.fulfillment==="envio"?("Envio "+order.ciudad):"Recoger")+" \u2014 "+order.when+"%0A"+(order.dir||"")+mapa+"%0ATotal "+money(order.total)+"%0A"+order.nombre+" "+order.tel);
   cart=[];saveCart();
+  document.getElementById("nombre").value="";
+  document.getElementById("tel").value="";
+  document.getElementById("dir").value="";
+  document.getElementById("nota").value="";
+  pin=null;
+  closeCart();
   window.open("https://wa.me/"+CFG.wa+"?text="+text,"_blank");
 }
+function resetPedidos(){
+  localStorage.removeItem("yu_cart");
+  localStorage.removeItem("yu_orders");
+  cart=[];
+  render();
+  alert("Pedidos y carrito borrados en este aparato.");
+}
 render();
+if(location.hash==="#reset"){resetPedidos()}
 </script>
 </body>
 </html>
