@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>Yufraka · Pako</title>
+<style>
+body{font-family:sans-serif;background:#fbf7f4;color:#2a1f24;margin:0;padding:20px;max-width:720px;margin:0 auto}
+h1{font-size:28px}
+input{padding:8px;border:1px solid #e4d4d8;border-radius:8px;width:110px;font:inherit}
+button{background:#9b3d54;color:#fff;border:0;border-radius:10px;padding:10px 14px;cursor:pointer;margin:6px 6px 0 0;font:inherit}
+.ghost{background:#fff;color:#2a1f24;border:1px solid #d9c4c8}
+.row{display:flex;gap:10px;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid #f0e6e8}
+.card{background:#fff;border-radius:12px;padding:12px;margin:10px 0}
+.hid{display:none}
+</style>
+</head>
+<body>
+<div id="login">
+  <h1>Pako</h1>
+  <p>Solo el dueno. PIN.</p>
+  <input id="pin" type="password" placeholder="PIN"/>
+  <button onclick="entrar()">Entrar</button>
+</div>
+<div id="app" class="hid">
+  <h1>Pako · Yufraka</h1>
+  <p><a href="/">Ver tienda</a></p>
+  <h2>Pedidos en este celular / compu</h2>
+  <div id="orders">Sin pedidos en este aparato.</div>
+  <h2>Precios</h2>
+  <p>Cambia y guarda. En esta computadora se ven ya. Para que salgan en la web de todos, avisame y los publico.</p>
+  <div id="prices"></div>
+  <button onclick="guardar()">Guardar precios aqui</button>
+  <button class="ghost" onclick="salir()">Salir</button>
+</div>
+<script>
+const PIN="3407";
+const DEFAULTS=[
+{id:"r50",name:"50 rosas rojas",price:900},
+{id:"r50-astro",name:"50 rosas + astromelia",price:1000},
+{id:"r50-nube",name:"50 rosas + nube",price:1000},
+{id:"r100",name:"100 rosas rojas",price:1800},
+{id:"docena-nieve",name:"Docena roja con nieve",price:450},
+{id:"rojo-blanco",name:"Rojo y blanco",price:480},
+{id:"rosas-pink",name:"Rosas pink",price:520},
+{id:"tricolor",name:"Ramo tricolor",price:750},
+{id:"pink-astro",name:"Pink con astromelia",price:580},
+{id:"pastel-astro",name:"Pastel con astromelia",price:480},
+{id:"blanco-lila",name:"Blanco y lila",price:520},
+{id:"fucsia",name:"Rosas fucsia",price:700},
+{id:"pink-nieve",name:"Pink y nieve",price:680},
+{id:"gerbera-mix",name:"Mix gerbera",price:720},
+{id:"novia",name:"Quieres ser mi novia?",price:900},
+{id:"girasoles",name:"Girasoles / gerbera amarilla",price:450}
+];
+function entrar(){
+  if(document.getElementById("pin").value!==PIN){alert("PIN incorrecto");return}
+  sessionStorage.setItem("yu_pako","1");
+  show();
+}
+function salir(){sessionStorage.removeItem("yu_pako");location.reload()}
+function prices(){
+  const saved=JSON.parse(localStorage.getItem("yu_prices")||"null");
+  const map=saved||{};
+  return DEFAULTS.map(p=>({...p,price:map[p.id]!=null?map[p.id]:p.price}));
+}
+function show(){
+  document.getElementById("login").classList.add("hid");
+  document.getElementById("app").classList.remove("hid");
+  document.getElementById("prices").innerHTML=prices().map(p=>`<div class="row"><span>${p.name}</span><input data-id="${p.id}" type="number" value="${p.price}"/></div>`).join("");
+  const list=JSON.parse(localStorage.getItem("yu_orders")||"[]");
+  document.getElementById("orders").innerHTML=list.length?list.map(o=>`<div class="card"><b>${o.id}</b> · ${o.when||""} · ${o.fulfillment||""}<br>${(o.items||[]).map(i=>i.qty+"x "+i.name).join(", ")}<br>${o.nombre||""} ${o.tel||""}<br>${o.dir||""}<br>Total $${o.total||0}</div>`).join(""):"Sin pedidos en este aparato. El pedido de verdad llega por WhatsApp.";
+}
+function guardar(){
+  const map={};
+  document.querySelectorAll("#prices input").forEach(el=>{map[el.dataset.id]=Number(el.value||0)});
+  localStorage.setItem("yu_prices",JSON.stringify(map));
+  alert("Precios guardados en este aparato.");
+}
+if(sessionStorage.getItem("yu_pako")==="1") show();
+</script>
+</body>
+</html>
