@@ -1,1 +1,38 @@
-<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1"/><title>Pedido recibido</title></head><body style="font-family:sans-serif;text-align:center;padding:60px;background:#fbf7f4"><h1>Pedido recibido</h1><p>Yufraka ya tiene tu arreglo.</p><p><a href="index.html">Volver</a></p></body></html>
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>Pedido recibido</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@600&family=Outfit:wght@400;500;600&display=swap" rel="stylesheet"/>
+<style>
+body{font-family:Outfit,sans-serif;text-align:center;padding:48px 20px;background:#fbf7f4;color:#2a1f24}
+h1{font-family:Cormorant Garamond,serif}
+input,button{font:inherit;width:min(360px,100%);padding:12px;border-radius:12px;margin:8px auto;display:block}
+input{border:1px solid #e4d4d8}
+button{background:#9b3d54;color:#fff;border:0;cursor:pointer}
+.ghost{background:#fff;color:#2a1f24;border:1px solid #d9c4c8}
+.note{color:#7a6468;font-size:14px}
+</style>
+</head>
+<body>
+<h1>Pedido enviado</h1>
+<p id="folio"></p>
+<p>Si ya transferiste a Banorte, avisa al dueño para que arme el arreglo.</p>
+<input id="ref" placeholder="Referencia o ultimos 4 de la transferencia"/>
+<button onclick="avisar()">Confirmar pago por WhatsApp</button>
+<button class="ghost" onclick="location.href='index.html'">Volver a la tienda</button>
+<p class="note">Francisco confirma el deposito en su app Banorte. Este aviso no cobra solo.</p>
+<script>
+const last=JSON.parse(localStorage.getItem("yu_last")||"null");
+document.getElementById("folio").textContent=last?("Folio "+last.id+" · "+ (last.total!=null?("$"+last.total):"")):"";
+function avisar(){
+  const ref=document.getElementById("ref").value.trim();
+  const id=last&&last.id?last.id:"";
+  const tot=last&&last.total!=null?("$"+Number(last.total).toLocaleString("es-MX")):"";
+  const text=encodeURIComponent("CONFIRMACION DE PAGO Yufraka%0AFolio "+id+"%0ATotal "+tot+"%0AYa transferi Banorte Francisco Cruz%0ARef: "+(ref||"sin referencia")+"%0APueden armar el arreglo.");
+  window.open("https://wa.me/5218341383407?text="+text,"_blank");
+}
+</script>
+</body>
+</html>

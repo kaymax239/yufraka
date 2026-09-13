@@ -86,6 +86,12 @@ footer a{color:var(--rose-d);text-decoration:none;font-weight:600}
   <b>Pago Banorte</b><br>
   Francisco Cruz<br>
   Cuenta <span id="cta">4189 1400 7714 2338</span>
+  <div class="fulfill" style="margin-top:10px">
+    <label><input type="radio" name="pago" value="ya" checked onchange="syncPago()"><span>Ya pague</span></label>
+    <label><input type="radio" name="pago" value="pendiente" onchange="syncPago()"><span>Pago despues</span></label>
+  </div>
+  <input id="refpago" placeholder="Referencia o ultimos 4 de la transferencia"/>
+  <p class="note">Si ya transferiste, el dueño recibe CONFIRMACION DE PAGO y puede armar el arreglo. Si no, el pedido llega como pendiente.</p>
 </div>
 <div class="row"><span>Subtotal</span><b id="sub">$0</b></div>
 <div class="row"><span id="envLabel">Envio</span><b id="env">$100</b></div>
@@ -93,7 +99,7 @@ footer a{color:var(--rose-d);text-decoration:none;font-weight:600}
 <button class="pay" onclick="pagarWhatsApp()">Pedir por WhatsApp</button>
 <button class="ghost" type="button" onclick="cancelarPedido()">Cancelar pedido</button>
 <button class="ghost" type="button" onclick="mandarChofer()">Mandar mapa al chofer</button>
-<p class="note">WhatsApp Francisco +52 1 834 138 3407. En el mensaje va la foto del ramo, la cuenta y el mapa.</p>
+<p class="note">WhatsApp Francisco +52 1 834 138 3407. Foto del ramo + pago + mapa.</p>
 </div>
 </div>
 <footer>
@@ -128,6 +134,7 @@ function add(id){const p=PRODUCTS.find(x=>x.id===id);const i=cart.find(x=>x.id==
 function qty(id,d){const i=cart.find(x=>x.id===id);if(!i)return;i.qty+=d;if(i.qty<=0)cart=cart.filter(x=>x.id!==id);saveCart()}
 function subtotal(){return cart.reduce((s,i)=>s+i.price*i.qty,0)}
 function fulfillment(){return document.querySelector("input[name=ful]:checked").value}
+function pagoEstado(){return document.querySelector("input[name=pago]:checked").value}
 function ciudad(){return document.getElementById("ciudad").value}
 function zonaFar(){return document.getElementById("zonaFar").checked}
 function envio(){
@@ -170,6 +177,9 @@ function render(){
   document.getElementById("cartList").innerHTML=cart.length?cart.map(i=>`<div class="row"><div style="display:flex;gap:8px;align-items:center"><img src="${i.img||"fotos/foto_01.jpg"}" alt="" style="width:48px;height:48px;object-fit:cover;border-radius:8px"/><div>${i.name}<br><small>${money(i.price)} x ${i.qty}</small></div></div><div><button onclick="qty('${i.id}',-1)">-</button> <button onclick="qty('${i.id}',1)">+</button></div></div>`).join(""):"<p>Aun no eliges un arreglo.</p>";
   syncFul();
 }
+function syncPago(){
+  document.getElementById("refpago").style.display=pagoEstado()==="ya"?"block":"none";
+}
 function syncFul(){
   document.getElementById("env").textContent=money(envio());
   document.getElementById("envLabel").textContent=fulfillment()==="envio"?"Envio":"Recoleccion";
@@ -177,6 +187,7 @@ function syncFul(){
   document.getElementById("zonaFarWrap").style.display=(fulfillment()==="envio" && ciudad()==="Tampico")?"block":"none";
   document.getElementById("sub").textContent=money(subtotal());
   document.getElementById("tot").textContent=money(total());
+  syncPago();
 }
 function openCart(){document.getElementById("drawer").classList.add("open")}
 function closeCart(){document.getElementById("drawer").classList.remove("open")}
@@ -186,6 +197,7 @@ function cancelarPedido(){
   document.getElementById("tel").value="";
   document.getElementById("dir").value="";
   document.getElementById("nota").value="";
+  document.getElementById("refpago").value="";
   document.getElementById("zonaFar").checked=false;
   closeCart();
 }
@@ -193,11 +205,14 @@ function valid(){
   if(!cart.length){alert("Elige un arreglo");return false}
   if(!document.getElementById("nombre").value.trim()||!document.getElementById("tel").value.trim()){alert("Nombre y celular");return false}
   if(fulfillment()==="envio"&&!dirTexto()){alert("Falta la direccion o la ubicacion");return false}
+  if(pagoEstado()==="ya" && !document.getElementById("refpago").value.trim()){alert("Pon la referencia o los ultimos 4 de la transferencia");return false}
   return true;
 }
 function pagarWhatsApp(){
   if(!valid())return;
   const nota=document.getElementById("nota").value.trim();
+  const ref=document.getElementById("refpago").value.trim();
+  const pagado=pagoEstado()==="ya";
   const order={
     id:"YF-"+Date.now().toString(36).toUpperCase(),
     items:cart,
@@ -210,14 +225,19 @@ function pagarWhatsApp(){
     zonaFar:zonaFar(),
     mapa:fulfillment()==="envio"?mapaUrl():"",
     nota:nota,
+    pago:pagado?"confirmado":"pendiente",
+    ref:ref,
     envio:envio(),
     total:total()
   };
   const list=JSON.parse(localStorage.getItem("yu_orders")||"[]");list.unshift(order);localStorage.setItem("yu_orders",JSON.stringify(list));
+  localStorage.setItem("yu_last",JSON.stringify({id:order.id,total:order.total}));
   const lines=order.items.map(i=>"* "+i.qty+"x "+i.name+" ("+money(i.price)+")%0AFoto: "+fotoUrl(i.img||"fotos/foto_01.jpg")).join("%0A");
   const mapa=order.mapa?("%0AMapa chofer: "+order.mapa):"";
   const zona=order.fulfillment==="envio"?("Envio "+order.ciudad+(order.zonaFar?" (lejos/refineria)":"")+" "+money(order.envio)):"Recoger";
-  const pago="%0APago Banorte Francisco Cruz%0ACuenta "+CFG.banorte.cuenta;
+  const pago=pagado
+    ?("%0ACONFIRMACION DE PAGO%0AYa transferi Banorte Francisco Cruz%0ACuenta "+CFG.banorte.cuenta+"%0ARef: "+ref+"%0APueden ARMAR el arreglo.")
+    :("%0APAGO PENDIENTE%0ABanorte Francisco Cruz%0ACuenta "+CFG.banorte.cuenta+"%0ANo armar hasta confirmar deposito.");
   const ded=nota?("%0ADedicatoria: "+nota):"";
   const text=encodeURIComponent("Pedido Yufraka "+order.id+"%0A"+lines+"%0A"+zona+" - "+order.when+"%0A"+(order.dir||"")+mapa+ded+pago+"%0ATotal "+money(order.total)+"%0A"+order.nombre+" "+order.tel);
   cart=[];saveCart();
@@ -225,9 +245,11 @@ function pagarWhatsApp(){
   document.getElementById("tel").value="";
   document.getElementById("dir").value="";
   document.getElementById("nota").value="";
+  document.getElementById("refpago").value="";
   pin=null;
   closeCart();
   window.open("https://wa.me/"+CFG.wa+"?text="+text,"_blank");
+  setTimeout(function(){location.href="gracias.html";},400);
 }
 render();
 </script>
