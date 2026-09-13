@@ -34,6 +34,8 @@ input,textarea,select{width:100%;padding:10px 12px;border:1px solid #e4d4d8;bord
 .pay{width:100%;background:var(--rose);color:#fff;border:0;border-radius:14px;padding:14px;margin-top:8px;cursor:pointer}
 .ghost{width:100%;background:#fff;border:1px solid #d9c4c8;border-radius:14px;padding:12px;margin-top:8px;cursor:pointer}
 .note{font-size:12px;color:#7a6468;margin-top:8px}
+.paybox{background:var(--blush);border-radius:12px;padding:12px;margin:10px 0;font-size:14px}
+.zona{margin:8px 0;font-size:14px}
 footer{text-align:center;padding:28px 16px 40px;color:#8a7377;font-size:13px}
 footer a{color:var(--rose-d);text-decoration:none;font-weight:600}
 </style>
@@ -50,7 +52,7 @@ footer a{color:var(--rose-d);text-decoration:none;font-weight:600}
   <img src="fotos/foto_01.jpg" alt="Floreria Yufraka" style="width:min(520px,92vw);border-radius:18px;margin:0 auto 16px;display:block;background:#111"/>
   <h1>Flores que nacen del corazon</h1>
   <p>Elige el ramo, ve el precio, envio o recoger en local.</p>
-  <p class="zonas">Entregamos en <b>Tampico</b>, <b>Madero</b> y <b>Altamira</b>.</p>
+  <p class="zonas">Envio: Tampico $100 · Madero / refineria $150 · Altamira $200</p>
 </section>
 <section id="catalogo" class="grid"></section>
 <div class="drawer" id="drawer" onclick="if(event.target===this)closeCart()">
@@ -68,24 +70,30 @@ footer a{color:var(--rose-d);text-decoration:none;font-weight:600}
 <input id="nombre" placeholder="Tu nombre"/>
 <input id="tel" placeholder="WhatsApp / celular"/>
 <div id="geoBox">
-<select id="ciudad">
-  <option value="Tampico">Tampico</option>
-  <option value="Ciudad Madero">Ciudad Madero</option>
-  <option value="Altamira">Altamira</option>
+<select id="ciudad" onchange="syncFul()">
+  <option value="Tampico">Tampico ($100)</option>
+  <option value="Ciudad Madero">Ciudad Madero / refineria ($150)</option>
+  <option value="Altamira">Altamira ($200)</option>
 </select>
+<label class="zona" id="zonaFarWrap"><input type="checkbox" id="zonaFar" onchange="syncFul()"> Lejos del centro / cerca de la refineria de Madero ($150)</label>
 <input id="dir" placeholder="Calle, numero, colonia"/>
 <button class="ghost" type="button" onclick="usarUbicacion()">Usar mi ubicacion</button>
 <button class="ghost" type="button" onclick="abrirMapa()">Abrir mapa</button>
 <p class="note" id="mapStatus">Escribe la direccion o sube tu ubicacion. El mapa se manda al chofer.</p>
 </div>
 <textarea id="nota" rows="2" placeholder="Dedicatoria (opcional)"></textarea>
+<div class="paybox">
+  <b>Pago Banorte</b><br>
+  Francisco Cruz<br>
+  Cuenta <span id="cta">4189 1400 7714 2338</span>
+</div>
 <div class="row"><span>Subtotal</span><b id="sub">$0</b></div>
-<div class="row"><span id="envLabel">Envio</span><b id="env">$80</b></div>
+<div class="row"><span id="envLabel">Envio</span><b id="env">$100</b></div>
 <div class="row"><span>Total</span><b id="tot">$0</b></div>
 <button class="pay" onclick="pagarWhatsApp()">Pedir por WhatsApp</button>
 <button class="ghost" type="button" onclick="cancelarPedido()">Cancelar pedido</button>
 <button class="ghost" type="button" onclick="mandarChofer()">Mandar mapa al chofer</button>
-<p class="note">WhatsApp Francisco +52 1 834 138 3407. La liga de pago se agrega cuando este la cuenta.</p>
+<p class="note">WhatsApp Francisco +52 1 834 138 3407. En el mensaje va la foto del ramo, la cuenta y el mapa.</p>
 </div>
 </div>
 <footer>
@@ -93,7 +101,12 @@ footer a{color:var(--rose-d);text-decoration:none;font-weight:600}
   Pagina elaborada por <a href="https://kaymaxllc.com" target="_blank" rel="noopener">KAYMAX</a>
 </footer>
 <script>
-const CFG={wa:"5218341383407",envio:80,mpLink:""};
+const CFG={
+  wa:"5218341383407",
+  site: location.origin,
+  banorte:{titular:"Francisco Cruz",cuenta:"4189140077142338"},
+  envio:{tampico:100,madero:150,altamira:200}
+};
 let pin=null;
 const PRODUCTS=[
 {id:"r50",name:"50 rosas rojas",desc:"Buchon de 50 rosas",price:700,img:"fotos/foto_11.jpg"},
@@ -111,14 +124,23 @@ const PRODUCTS=[
 let cart=JSON.parse(localStorage.getItem("yu_cart")||"[]");
 function money(n){return "$"+Number(n).toLocaleString("es-MX")}
 function saveCart(){localStorage.setItem("yu_cart",JSON.stringify(cart));render()}
-function add(id){const p=PRODUCTS.find(x=>x.id===id);const i=cart.find(x=>x.id===id);if(i)i.qty++;else cart.push({id:p.id,name:p.name,price:p.price,qty:1});saveCart()}
+function add(id){const p=PRODUCTS.find(x=>x.id===id);const i=cart.find(x=>x.id===id);if(i)i.qty++;else cart.push({id:p.id,name:p.name,price:p.price,qty:1,img:p.img});saveCart()}
 function qty(id,d){const i=cart.find(x=>x.id===id);if(!i)return;i.qty+=d;if(i.qty<=0)cart=cart.filter(x=>x.id!==id);saveCart()}
 function subtotal(){return cart.reduce((s,i)=>s+i.price*i.qty,0)}
 function fulfillment(){return document.querySelector("input[name=ful]:checked").value}
-function envio(){return fulfillment()==="envio"?CFG.envio:0}
-function total(){return subtotal()+envio()}
 function ciudad(){return document.getElementById("ciudad").value}
+function zonaFar(){return document.getElementById("zonaFar").checked}
+function envio(){
+  if(fulfillment()!=="envio") return 0;
+  const c=ciudad();
+  if(c==="Altamira") return CFG.envio.altamira;
+  if(c==="Ciudad Madero") return CFG.envio.madero;
+  if(zonaFar()) return CFG.envio.madero;
+  return CFG.envio.tampico;
+}
+function total(){return subtotal()+envio()}
 function dirTexto(){return document.getElementById("dir").value.trim()}
+function fotoUrl(img){return CFG.site+"/"+img}
 function mapaUrl(){
   if(pin) return "https://www.google.com/maps?q="+pin.lat+","+pin.lng;
   return "https://www.google.com/maps/search/?api=1&query="+encodeURIComponent(dirTexto()+" "+ciudad()+" Tamaulipas");
@@ -145,13 +167,14 @@ function mandarChofer(){
 function render(){
   document.getElementById("catalogo").innerHTML=PRODUCTS.map(p=>`<article class="card"><img src="${p.img}" alt="${p.name}"/><div class="body"><h3>${p.name}</h3><p style="color:#7a6468;font-size:13px">${p.desc}</p><div class="price">${money(p.price)}</div><button onclick="add('${p.id}')">Elegir</button></div></article>`).join("");
   document.getElementById("count").textContent=cart.reduce((s,i)=>s+i.qty,0);
-  document.getElementById("cartList").innerHTML=cart.length?cart.map(i=>`<div class="row"><div>${i.name}<br><small>${money(i.price)} x ${i.qty}</small></div><div><button onclick="qty('${i.id}',-1)">-</button> <button onclick="qty('${i.id}',1)">+</button></div></div>`).join(""):"<p>Aun no eliges un arreglo.</p>";
+  document.getElementById("cartList").innerHTML=cart.length?cart.map(i=>`<div class="row"><div style="display:flex;gap:8px;align-items:center"><img src="${i.img||"fotos/foto_01.jpg"}" alt="" style="width:48px;height:48px;object-fit:cover;border-radius:8px"/><div>${i.name}<br><small>${money(i.price)} x ${i.qty}</small></div></div><div><button onclick="qty('${i.id}',-1)">-</button> <button onclick="qty('${i.id}',1)">+</button></div></div>`).join(""):"<p>Aun no eliges un arreglo.</p>";
   syncFul();
 }
 function syncFul(){
   document.getElementById("env").textContent=money(envio());
   document.getElementById("envLabel").textContent=fulfillment()==="envio"?"Envio":"Recoleccion";
   document.getElementById("geoBox").style.display=fulfillment()==="envio"?"block":"none";
+  document.getElementById("zonaFarWrap").style.display=(fulfillment()==="envio" && ciudad()==="Tampico")?"block":"none";
   document.getElementById("sub").textContent=money(subtotal());
   document.getElementById("tot").textContent=money(total());
 }
@@ -163,6 +186,7 @@ function cancelarPedido(){
   document.getElementById("tel").value="";
   document.getElementById("dir").value="";
   document.getElementById("nota").value="";
+  document.getElementById("zonaFar").checked=false;
   closeCart();
 }
 function valid(){
@@ -173,11 +197,29 @@ function valid(){
 }
 function pagarWhatsApp(){
   if(!valid())return;
-  const order={id:"YF-"+Date.now().toString(36).toUpperCase(),items:cart,fulfillment:fulfillment(),when:document.querySelector("input[name=cuando]:checked").value,nombre:document.getElementById("nombre").value.trim(),tel:document.getElementById("tel").value.trim(),ciudad:ciudad(),dir:dirTexto(),mapa:fulfillment()==="envio"?mapaUrl():"",total:total()};
+  const nota=document.getElementById("nota").value.trim();
+  const order={
+    id:"YF-"+Date.now().toString(36).toUpperCase(),
+    items:cart,
+    fulfillment:fulfillment(),
+    when:document.querySelector("input[name=cuando]:checked").value,
+    nombre:document.getElementById("nombre").value.trim(),
+    tel:document.getElementById("tel").value.trim(),
+    ciudad:ciudad(),
+    dir:dirTexto(),
+    zonaFar:zonaFar(),
+    mapa:fulfillment()==="envio"?mapaUrl():"",
+    nota:nota,
+    envio:envio(),
+    total:total()
+  };
   const list=JSON.parse(localStorage.getItem("yu_orders")||"[]");list.unshift(order);localStorage.setItem("yu_orders",JSON.stringify(list));
-  const lines=order.items.map(i=>"* "+i.qty+"x "+i.name+" ("+money(i.price)+")").join("%0A");
+  const lines=order.items.map(i=>"* "+i.qty+"x "+i.name+" ("+money(i.price)+")%0AFoto: "+fotoUrl(i.img||"fotos/foto_01.jpg")).join("%0A");
   const mapa=order.mapa?("%0AMapa chofer: "+order.mapa):"";
-  const text=encodeURIComponent("Pedido Yufraka "+order.id+"%0A"+lines+"%0A"+(order.fulfillment==="envio"?("Envio "+order.ciudad):"Recoger")+" - "+order.when+"%0A"+(order.dir||"")+mapa+"%0ATotal "+money(order.total)+"%0A"+order.nombre+" "+order.tel);
+  const zona=order.fulfillment==="envio"?("Envio "+order.ciudad+(order.zonaFar?" (lejos/refineria)":"")+" "+money(order.envio)):"Recoger";
+  const pago="%0APago Banorte Francisco Cruz%0ACuenta "+CFG.banorte.cuenta;
+  const ded=nota?("%0ADedicatoria: "+nota):"";
+  const text=encodeURIComponent("Pedido Yufraka "+order.id+"%0A"+lines+"%0A"+zona+" - "+order.when+"%0A"+(order.dir||"")+mapa+ded+pago+"%0ATotal "+money(order.total)+"%0A"+order.nombre+" "+order.tel);
   cart=[];saveCart();
   document.getElementById("nombre").value="";
   document.getElementById("tel").value="";
