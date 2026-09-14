@@ -19,7 +19,6 @@ body{font-family:Outfit,sans-serif;background:#f3eeea;color:var(--ink)}
 .total-box small{color:#888;letter-spacing:.12em}
 .total-box b{display:block;font-size:42px;color:var(--rose);margin-top:6px}
 .opts{display:grid;gap:10px}
-@media(min-width:640px){.opts{grid-template-columns:1fr 1fr 1fr}}
 .opt{border:1px solid #eadde1;border-radius:16px;padding:18px 10px;background:#fff;cursor:pointer;font:inherit;font-weight:600}
 .opt.ink{background:#1b2230;color:#fff;border:0}
 .opt.rose{background:var(--rose);color:#fff;border:0}
@@ -44,12 +43,10 @@ body{font-family:Outfit,sans-serif;background:#f3eeea;color:var(--ink)}
     <div class="body">
       <div class="total-box"><small>TOTAL A PAGAR</small><b id="big">$0</b></div>
       <div class="opts">
-        <button class="opt ink" id="b1" onclick="pick('transferencia')">Transferencia</button>
-        <button class="opt rose" id="b2" onclick="pick('tarjeta')">Pagar con tarjeta (MX)</button>
-        <button class="opt" id="b3" onclick="pick('stripe')">Pagar con Stripe</button>
+        <button class="opt ink on" id="b1">Pagar con SPEI</button>
       </div>
-      <p class="ok">Pago protegido</p>
-      <div id="payHint" class="note"></div>
+      <p class="ok">Pago protegido · SPEI Banorte</p>
+      <div id="payHint" class="note">Banorte · Francisco Cruz · 4189 1400 7714 2338. Confirma por WhatsApp con la referencia SPEI.</div>
       <button class="opt rose" style="width:100%;margin-top:16px;border-radius:14px" onclick="confirmar()">Confirmar pedido por WhatsApp</button>
       <a class="back" href="index.html">← Volver</a>
     </div>
@@ -68,7 +65,7 @@ body{font-family:Outfit,sans-serif;background:#f3eeea;color:var(--ink)}
 const CFG={wa:"5218341383407",envio:{tampico:100,madero:150,altamira:200}};
 const cart=JSON.parse(localStorage.getItem("yu_cart")||"[]");
 const draft=JSON.parse(localStorage.getItem("yu_draft")||"{}");
-let method=localStorage.getItem("yu_pay_method")||"transferencia";
+let method="spei";
 function money(n){return "$"+Number(n).toLocaleString("es-MX")}
 function piezas(){return cart.reduce((s,i)=>s+i.qty,0)}
 function subtotal(){return cart.reduce((s,i)=>s+i.price*i.qty,0)}
@@ -81,21 +78,12 @@ function envio(){
   return CFG.envio.tampico;
 }
 function total(){return subtotal()+envio()}
-function pick(m){
-  method=m;
-  localStorage.setItem("yu_pay_method",m);
-  ["b1","b2","b3"].forEach(id=>document.getElementById(id).classList.remove("on"));
-  document.getElementById(m==="transferencia"?"b1":m==="tarjeta"?"b2":"b3").classList.add("on");
-  const h=document.getElementById("payHint");
-  if(m==="transferencia") h.textContent="Banorte · Francisco Cruz · 4189 1400 7714 2338. Confirma por WhatsApp con referencia.";
-  else if(m==="tarjeta") h.textContent="Aún no hay terminal en la web. Pako te manda liga o te cobra en local.";
-  else h.textContent="Stripe no está conectado. No inventamos cobro. Pako te manda liga cuando esté.";
-}
+function pick(m){ method="spei"; localStorage.setItem("yu_pay_method","spei"); }
 function confirmar(){
   if(!cart.length){location.href="index.html";return;}
   const nombres=cart.map(i=>i.qty+"x "+i.name).join("%0A");
   const zona=draft.ful==="local"?"RECOGER LOCAL":("Envio "+(draft.ciudad||"")+" "+(envio()?money(envio()):"GRATIS"));
-  const text="PEDIDO YUFRAKA%0A"+nombres+"%0A"+zona+"%0APago: "+method+"%0ATotal "+money(total())+"%0A"+ (draft.nombre||"")+" "+(draft.tel||"");
+  const text="PEDIDO YUFRAKA%0A"+nombres+"%0A"+zona+"%0APago: SPEI%0ATotal "+money(total())+"%0A"+ (draft.nombre||"")+" "+(draft.tel||"");
   window.open("https://wa.me/"+CFG.wa+"?text="+encodeURIComponent(text),"_blank");
   localStorage.setItem("yu_last",JSON.stringify({id:"YF-WEB",total:total()}));
   setTimeout(function(){location.href="gracias.html";},400);
