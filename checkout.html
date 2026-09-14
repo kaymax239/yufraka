@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>Pago | Yufraka</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@600&family=Outfit:wght@400;500;600&display=swap" rel="stylesheet"/>
+<style>
+:root{--ink:#2a1f24;--rose:#7a1f3a;--cream:#f7f3f0}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:Outfit,sans-serif;background:#f3eeea;color:var(--ink)}
+.top{height:8px;background:var(--rose)}
+.wrap{max-width:980px;margin:28px auto;padding:0 16px;display:grid;gap:18px}
+@media(min-width:860px){.wrap{grid-template-columns:1.4fr .8fr}}
+.card{background:#fff;border-radius:24px;box-shadow:0 12px 32px rgba(40,10,20,.08);overflow:hidden}
+.hd{background:var(--rose);color:#fff;padding:16px 22px;font-weight:700;letter-spacing:.04em}
+.body{padding:22px}
+.total-box{border:1px solid #eee;border-radius:18px;padding:28px;text-align:center;margin-bottom:18px}
+.total-box small{color:#888;letter-spacing:.12em}
+.total-box b{display:block;font-size:42px;color:var(--rose);margin-top:6px}
+.opts{display:grid;gap:10px}
+@media(min-width:640px){.opts{grid-template-columns:1fr 1fr 1fr}}
+.opt{border:1px solid #eadde1;border-radius:16px;padding:18px 10px;background:#fff;cursor:pointer;font:inherit;font-weight:600}
+.opt.ink{background:#1b2230;color:#fff;border:0}
+.opt.rose{background:var(--rose);color:#fff;border:0}
+.opt.on{outline:3px solid #22a45a}
+.ok{font-size:11px;color:#22a45a;text-align:center;margin-top:6px}
+.side{padding:18px 20px}
+.side h2{color:var(--rose);font-size:18px;margin-bottom:12px}
+.item{display:flex;gap:10px;align-items:center;padding-bottom:12px;border-bottom:1px solid #f0e6e8}
+.item img{width:54px;height:54px;object-fit:cover;border-radius:10px}
+.rows{margin-top:12px;font-size:14px}
+.rows div{display:flex;justify-content:space-between;padding:6px 0}
+.rows .tot{font-size:22px;font-weight:700;color:var(--rose);margin-top:8px}
+.back{display:inline-block;margin:14px 22px 22px;color:#888;text-decoration:none}
+.note{font-size:13px;color:#7a6468;margin-top:12px}
+</style>
+</head>
+<body>
+<div class="top"></div>
+<div class="wrap">
+  <section class="card">
+    <div class="hd">4. PAGO</div>
+    <div class="body">
+      <div class="total-box"><small>TOTAL A PAGAR</small><b id="big">$0</b></div>
+      <div class="opts">
+        <button class="opt ink" id="b1" onclick="pick('transferencia')">Transferencia</button>
+        <button class="opt rose" id="b2" onclick="pick('tarjeta')">Pagar con tarjeta (MX)</button>
+        <button class="opt" id="b3" onclick="pick('stripe')">Pagar con Stripe</button>
+      </div>
+      <p class="ok">Pago protegido</p>
+      <div id="payHint" class="note"></div>
+      <button class="opt rose" style="width:100%;margin-top:16px;border-radius:14px" onclick="confirmar()">Confirmar pedido por WhatsApp</button>
+      <a class="back" href="index.html">← Volver</a>
+    </div>
+  </section>
+  <aside class="card side">
+    <h2>▣ RESUMEN</h2>
+    <div id="items"></div>
+    <div class="rows">
+      <div><span>Subtotal</span><b id="sub">$0</b></div>
+      <div><span>Envío</span><b id="env">$0</b></div>
+      <div class="tot"><span>TOTAL</span><span id="tot">$0</span></div>
+    </div>
+  </aside>
+</div>
+<script>
+const CFG={wa:"5218341383407",envio:{tampico:100,madero:150,altamira:200}};
+const cart=JSON.parse(localStorage.getItem("yu_cart")||"[]");
+const draft=JSON.parse(localStorage.getItem("yu_draft")||"{}");
+let method=localStorage.getItem("yu_pay_method")||"transferencia";
+function money(n){return "$"+Number(n).toLocaleString("es-MX")}
+function piezas(){return cart.reduce((s,i)=>s+i.qty,0)}
+function subtotal(){return cart.reduce((s,i)=>s+i.price*i.qty,0)}
+function envio(){
+  if(draft.ful==="local") return 0;
+  if(piezas()>=2) return 0;
+  const c=draft.ciudad||"Tampico";
+  if(c==="Altamira") return CFG.envio.altamira;
+  if(c==="Ciudad Madero"||draft.zonaFar) return CFG.envio.madero;
+  return CFG.envio.tampico;
+}
+function total(){return subtotal()+envio()}
+function pick(m){
+  method=m;
+  localStorage.setItem("yu_pay_method",m);
+  ["b1","b2","b3"].forEach(id=>document.getElementById(id).classList.remove("on"));
+  document.getElementById(m==="transferencia"?"b1":m==="tarjeta"?"b2":"b3").classList.add("on");
+  const h=document.getElementById("payHint");
+  if(m==="transferencia") h.textContent="Banorte · Francisco Cruz · 4189 1400 7714 2338. Confirma por WhatsApp con referencia.";
+  else if(m==="tarjeta") h.textContent="Aún no hay terminal en la web. Pako te manda liga o te cobra en local.";
+  else h.textContent="Stripe no está conectado. No inventamos cobro. Pako te manda liga cuando esté.";
+}
+function confirmar(){
+  if(!cart.length){location.href="index.html";return;}
+  const nombres=cart.map(i=>i.qty+"x "+i.name).join("%0A");
+  const zona=draft.ful==="local"?"RECOGER LOCAL":("Envio "+(draft.ciudad||"")+" "+(envio()?money(envio()):"GRATIS"));
+  const text="PEDIDO YUFRAKA%0A"+nombres+"%0A"+zona+"%0APago: "+method+"%0ATotal "+money(total())+"%0A"+ (draft.nombre||"")+" "+(draft.tel||"");
+  window.open("https://wa.me/"+CFG.wa+"?text="+encodeURIComponent(text),"_blank");
+  localStorage.setItem("yu_last",JSON.stringify({id:"YF-WEB",total:total()}));
+  setTimeout(function(){location.href="gracias.html";},400);
+}
+document.getElementById("items").innerHTML=cart.map(i=>`<div class="item"><img src="${i.img||"fotos/foto_01.jpg"}"/><div><b>${i.name}</b><br><small>Cant: ${i.qty}</small></div></div>`).join("")||"<p>Carrito vacío.</p>";
+document.getElementById("sub").textContent=money(subtotal());
+document.getElementById("env").textContent=envio()===0&&draft.ful!=="local"?"GRATIS":money(envio());
+document.getElementById("tot").textContent=money(total());
+document.getElementById("big").textContent=money(total());
+pick(method);
+</script>
+</body>
+</html>
