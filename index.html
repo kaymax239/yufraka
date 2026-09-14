@@ -99,7 +99,7 @@ footer a{color:var(--rose-d);text-decoration:none;font-weight:600}
 <button class="pay" onclick="pagarWhatsApp()">Pedir por WhatsApp</button>
 <button class="ghost" type="button" onclick="cancelarPedido()">Cancelar pedido</button>
 <button class="ghost" type="button" onclick="mandarChofer()">Mandar mapa al chofer</button>
-<p class="note">WhatsApp Francisco +52 1 834 138 3407. Foto del ramo + pago + mapa.</p>
+<p class="note">WhatsApp Francisco +52 1 834 138 3407. Pako toca el ticket y ve la foto grande del ramo.</p>
 </div>
 </div>
 <footer>
@@ -148,6 +148,10 @@ function envio(){
 function total(){return subtotal()+envio()}
 function dirTexto(){return document.getElementById("dir").value.trim()}
 function fotoUrl(img){return CFG.site+"/"+img}
+function ticketUrl(order){
+  const i=order.items.map(x=>x.id+":"+x.qty).join(",");
+  return CFG.site+"/pako.html?f="+encodeURIComponent(order.id)+"&w="+encodeURIComponent(order.when)+"&p="+(order.pago==="confirmado"?"ok":"no")+"&i="+encodeURIComponent(i);
+}
 function mapaUrl(){
   if(pin) return "https://www.google.com/maps?q="+pin.lat+","+pin.lng;
   return "https://www.google.com/maps/search/?api=1&query="+encodeURIComponent(dirTexto()+" "+ciudad()+" Tamaulipas");
@@ -232,14 +236,21 @@ function pagarWhatsApp(){
   };
   const list=JSON.parse(localStorage.getItem("yu_orders")||"[]");list.unshift(order);localStorage.setItem("yu_orders",JSON.stringify(list));
   localStorage.setItem("yu_last",JSON.stringify({id:order.id,total:order.total}));
-  const lines=order.items.map(i=>"* "+i.qty+"x "+i.name+" ("+money(i.price)+")%0AFoto: "+fotoUrl(i.img||"fotos/foto_01.jpg")).join("%0A");
+  const nombres=order.items.map(i=>i.qty+"x "+i.name).join("%0A");
+  const ticket=ticketUrl(order);
   const mapa=order.mapa?("%0AMapa chofer: "+order.mapa):"";
   const zona=order.fulfillment==="envio"?("Envio "+order.ciudad+(order.zonaFar?" (lejos/refineria)":"")+" "+money(order.envio)):"Recoger";
   const pago=pagado
-    ?("%0ACONFIRMACION DE PAGO%0AYa transferi Banorte Francisco Cruz%0ACuenta "+CFG.banorte.cuenta+"%0ARef: "+ref+"%0APueden ARMAR el arreglo.")
-    :("%0APAGO PENDIENTE%0ABanorte Francisco Cruz%0ACuenta "+CFG.banorte.cuenta+"%0ANo armar hasta confirmar deposito.");
+    ?("%0ACONFIRMACION DE PAGO%0ARef: "+ref+"%0APako PUEDE ARMAR.")
+    :("%0APAGO PENDIENTE%0APako NO armes hasta el deposito.");
   const ded=nota?("%0ADedicatoria: "+nota):"";
-  const text=encodeURIComponent("Pedido Yufraka "+order.id+"%0A"+lines+"%0A"+zona+" - "+order.when+"%0A"+(order.dir||"")+mapa+ded+pago+"%0ATotal "+money(order.total)+"%0A"+order.nombre+" "+order.tel);
+  const text=encodeURIComponent(
+    "PAKO toca aqui y ves la FOTO del ramo:%0A"+ticket+
+    "%0A%0AARMAR:%0A"+nombres+
+    "%0AFolio "+order.id+"%0A"+zona+" - "+order.when+
+    "%0A"+(order.dir||"")+mapa+ded+pago+
+    "%0ATotal "+money(order.total)+"%0A"+order.nombre+" "+order.tel
+  );
   cart=[];saveCart();
   document.getElementById("nombre").value="";
   document.getElementById("tel").value="";
