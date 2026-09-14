@@ -67,19 +67,29 @@ footer a{color:var(--rose-d);text-decoration:none;font-weight:600}
 <label><input type="radio" name="cuando" value="hoy" checked><span>Hoy</span></label>
 <label><input type="radio" name="cuando" value="manana"><span>Manana</span></label>
 </div>
-<input id="nombre" placeholder="Tu nombre"/>
-<input id="tel" placeholder="WhatsApp / celular"/>
+<input id="nombre" placeholder="Tu nombre (quien paga)"/>
+<input id="tel" placeholder="Tu WhatsApp / celular"/>
 <div id="geoBox">
+<p class="note">Datos para Pako y el chofer</p>
+<input id="recv" placeholder="Nombre de quien recibe el ramo"/>
+<input id="rtel" placeholder="Telefono de quien recibe"/>
 <select id="ciudad" onchange="syncFul()">
   <option value="Tampico">Tampico ($100)</option>
   <option value="Ciudad Madero">Ciudad Madero / refineria ($150)</option>
   <option value="Altamira">Altamira ($200)</option>
 </select>
 <label class="zona" id="zonaFarWrap"><input type="checkbox" id="zonaFar" onchange="syncFul()"> Lejos del centro / cerca de la refineria de Madero ($150)</label>
-<input id="dir" placeholder="Calle, numero, colonia"/>
+<input id="dir" placeholder="Ubicacion: calle, numero, colonia"/>
+<select id="hora">
+  <option value="">Hora de entrega</option>
+  <option value="09:00-12:00">09:00 a 12:00</option>
+  <option value="12:00-15:00">12:00 a 15:00</option>
+  <option value="15:00-18:00">15:00 a 18:00</option>
+  <option value="18:00-21:00">18:00 a 21:00</option>
+</select>
 <button class="ghost" type="button" onclick="usarUbicacion()">Usar mi ubicacion</button>
 <button class="ghost" type="button" onclick="abrirMapa()">Abrir mapa</button>
-<p class="note" id="mapStatus">Escribe la direccion o sube tu ubicacion. El mapa se manda al chofer.</p>
+<p class="note" id="mapStatus">Direccion + hora. El mapa se manda al chofer.</p>
 </div>
 <textarea id="nota" rows="2" placeholder="Dedicatoria (opcional)"></textarea>
 <div class="paybox">
@@ -91,7 +101,6 @@ footer a{color:var(--rose-d);text-decoration:none;font-weight:600}
     <label><input type="radio" name="pago" value="pendiente" onchange="syncPago()"><span>Pago despues</span></label>
   </div>
   <input id="refpago" placeholder="Referencia o ultimos 4 de la transferencia"/>
-  <p class="note">Si ya transferiste, el dueño recibe CONFIRMACION DE PAGO y puede armar el arreglo. Si no, el pedido llega como pendiente.</p>
 </div>
 <div class="row"><span>Subtotal</span><b id="sub">$0</b></div>
 <div class="row"><span id="envLabel">Envio</span><b id="env">$100</b></div>
@@ -99,7 +108,6 @@ footer a{color:var(--rose-d);text-decoration:none;font-weight:600}
 <button class="pay" onclick="pagarWhatsApp()">Pedir por WhatsApp</button>
 <button class="ghost" type="button" onclick="cancelarPedido()">Cancelar pedido</button>
 <button class="ghost" type="button" onclick="mandarChofer()">Mandar mapa al chofer</button>
-<p class="note">WhatsApp Francisco +52 1 834 138 3407. Pako toca el ticket y ve la foto grande del ramo.</p>
 </div>
 </div>
 <footer>
@@ -147,10 +155,19 @@ function envio(){
 }
 function total(){return subtotal()+envio()}
 function dirTexto(){return document.getElementById("dir").value.trim()}
-function fotoUrl(img){return CFG.site+"/"+img}
+function recv(){return document.getElementById("recv").value.trim()}
+function rtel(){return document.getElementById("rtel").value.trim()}
+function hora(){return document.getElementById("hora").value}
 function ticketUrl(order){
   const i=order.items.map(x=>x.id+":"+x.qty).join(",");
-  return CFG.site+"/pako.html?f="+encodeURIComponent(order.id)+"&w="+encodeURIComponent(order.when)+"&p="+(order.pago==="confirmado"?"ok":"no")+"&i="+encodeURIComponent(i);
+  return CFG.site+"/pako.html?f="+encodeURIComponent(order.id)
+    +"&w="+encodeURIComponent(order.when)
+    +"&p="+(order.pago==="confirmado"?"ok":"no")
+    +"&i="+encodeURIComponent(i)
+    +"&recv="+encodeURIComponent(order.recv||"")
+    +"&rtel="+encodeURIComponent(order.rtel||"")
+    +"&dir="+encodeURIComponent((order.ciudad?order.ciudad+" ":"")+(order.dir||""))
+    +"&hora="+encodeURIComponent(order.hora||"");
 }
 function mapaUrl(){
   if(pin) return "https://www.google.com/maps?q="+pin.lat+","+pin.lng;
@@ -162,7 +179,7 @@ function usarUbicacion(){
   navigator.geolocation.getCurrentPosition(function(pos){
     pin={lat:pos.coords.latitude,lng:pos.coords.longitude};
     document.getElementById("dir").value="Ubicacion GPS "+pin.lat.toFixed(5)+", "+pin.lng.toFixed(5);
-    document.getElementById("mapStatus").textContent="Ubicacion lista. Abre el mapa o mandalo al chofer.";
+    document.getElementById("mapStatus").textContent="Ubicacion lista.";
   },function(){document.getElementById("mapStatus").textContent="No se pudo leer el GPS. Escribe la direccion.";});
 }
 function abrirMapa(){
@@ -172,7 +189,7 @@ function abrirMapa(){
 function mandarChofer(){
   if(fulfillment()!=="envio"){alert("El mapa es para envios");return}
   if(!dirTexto() && !pin){alert("Falta direccion o ubicacion");return}
-  const text=encodeURIComponent("Yufraka entrega "+ciudad()+"%0A"+dirTexto()+"%0AMapa: "+mapaUrl());
+  const text=encodeURIComponent("Yufraka entrega%0AQuien recibe: "+recv()+" "+rtel()+"%0AHora: "+hora()+"%0A"+ciudad()+" "+dirTexto()+"%0AMapa: "+mapaUrl());
   window.open("https://wa.me/"+CFG.wa+"?text="+text,"_blank");
 }
 function render(){
@@ -197,19 +214,21 @@ function openCart(){document.getElementById("drawer").classList.add("open")}
 function closeCart(){document.getElementById("drawer").classList.remove("open")}
 function cancelarPedido(){
   cart=[];saveCart();pin=null;
-  document.getElementById("nombre").value="";
-  document.getElementById("tel").value="";
-  document.getElementById("dir").value="";
-  document.getElementById("nota").value="";
-  document.getElementById("refpago").value="";
+  ["nombre","tel","dir","nota","refpago","recv","rtel"].forEach(function(id){document.getElementById(id).value="";});
+  document.getElementById("hora").value="";
   document.getElementById("zonaFar").checked=false;
   closeCart();
 }
 function valid(){
   if(!cart.length){alert("Elige un arreglo");return false}
-  if(!document.getElementById("nombre").value.trim()||!document.getElementById("tel").value.trim()){alert("Nombre y celular");return false}
-  if(fulfillment()==="envio"&&!dirTexto()){alert("Falta la direccion o la ubicacion");return false}
-  if(pagoEstado()==="ya" && !document.getElementById("refpago").value.trim()){alert("Pon la referencia o los ultimos 4 de la transferencia");return false}
+  if(!document.getElementById("nombre").value.trim()||!document.getElementById("tel").value.trim()){alert("Tu nombre y celular");return false}
+  if(fulfillment()==="envio"){
+    if(!recv()){alert("Nombre de quien recibe el ramo");return false}
+    if(!rtel()){alert("Telefono de quien recibe");return false}
+    if(!dirTexto()){alert("Ubicacion de entrega");return false}
+    if(!hora()){alert("Hora de entrega");return false}
+  }
+  if(pagoEstado()==="ya" && !document.getElementById("refpago").value.trim()){alert("Pon la referencia o los ultimos 4");return false}
   return true;
 }
 function pagarWhatsApp(){
@@ -224,6 +243,9 @@ function pagarWhatsApp(){
     when:document.querySelector("input[name=cuando]:checked").value,
     nombre:document.getElementById("nombre").value.trim(),
     tel:document.getElementById("tel").value.trim(),
+    recv:recv(),
+    rtel:rtel(),
+    hora:hora(),
     ciudad:ciudad(),
     dir:dirTexto(),
     zonaFar:zonaFar(),
@@ -238,27 +260,22 @@ function pagarWhatsApp(){
   localStorage.setItem("yu_last",JSON.stringify({id:order.id,total:order.total}));
   const nombres=order.items.map(i=>i.qty+"x "+i.name).join("%0A");
   const ticket=ticketUrl(order);
-  const mapa=order.mapa?("%0AMapa chofer: "+order.mapa):"";
+  const mapa=order.mapa?("%0AMapa: "+order.mapa):"";
   const zona=order.fulfillment==="envio"?("Envio "+order.ciudad+(order.zonaFar?" (lejos/refineria)":"")+" "+money(order.envio)):"Recoger";
-  const pago=pagado
-    ?("%0ACONFIRMACION DE PAGO%0ARef: "+ref+"%0APako PUEDE ARMAR.")
-    :("%0APAGO PENDIENTE%0APako NO armes hasta el deposito.");
+  const entrega=order.fulfillment==="envio"
+    ?("%0AENTREGAR A: "+order.recv+"%0ATel quien recibe: "+order.rtel+"%0AUbicacion: "+order.ciudad+" "+order.dir+"%0AHora: "+order.hora)
+    :"";
+  const pago=pagado?("%0ACONFIRMACION DE PAGO Ref "+ref+" — Pako ARMA"):("%0APAGO PENDIENTE — no armar");
   const ded=nota?("%0ADedicatoria: "+nota):"";
   const text=encodeURIComponent(
-    "PAKO toca aqui y ves la FOTO del ramo:%0A"+ticket+
+    "PAKO toca para ver la FOTO:%0A"+ticket+
     "%0A%0AARMAR:%0A"+nombres+
     "%0AFolio "+order.id+"%0A"+zona+" - "+order.when+
-    "%0A"+(order.dir||"")+mapa+ded+pago+
-    "%0ATotal "+money(order.total)+"%0A"+order.nombre+" "+order.tel
+    entrega+mapa+ded+pago+
+    "%0ATotal "+money(order.total)+"%0APaga: "+order.nombre+" "+order.tel
   );
   cart=[];saveCart();
-  document.getElementById("nombre").value="";
-  document.getElementById("tel").value="";
-  document.getElementById("dir").value="";
-  document.getElementById("nota").value="";
-  document.getElementById("refpago").value="";
-  pin=null;
-  closeCart();
+  cancelarPedido();
   window.open("https://wa.me/"+CFG.wa+"?text="+text,"_blank");
   setTimeout(function(){location.href="gracias.html";},400);
 }
