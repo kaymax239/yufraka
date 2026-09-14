@@ -1,0 +1,3 @@
+User-agent: *
+Allow: /
+Sitemap: https://yufraka.vercel.app/sitemap.xml
