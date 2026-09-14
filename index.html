@@ -35,7 +35,7 @@ input,textarea,select{width:100%;padding:10px 12px;border:1px solid #e4d4d8;bord
 .ghost{width:100%;background:#fff;border:1px solid #d9c4c8;border-radius:14px;padding:12px;margin-top:8px;cursor:pointer}
 .note{font-size:12px;color:#7a6468;margin-top:8px}
 .paybox{background:var(--blush);border-radius:12px;padding:12px;margin:10px 0;font-size:14px}
-.zona{margin:8px 0;font-size:14px}
+.zona{margin:8px 0;font-size:14px;display:block}
 footer{text-align:center;padding:28px 16px 40px;color:#8a7377;font-size:13px}
 footer a{color:var(--rose-d);text-decoration:none;font-weight:600}
 </style>
@@ -53,6 +53,7 @@ footer a{color:var(--rose-d);text-decoration:none;font-weight:600}
   <h1>Flores que nacen del corazon</h1>
   <p>Elige el ramo, ve el precio, envio o recoger en local.</p>
   <p class="zonas">Envio: Tampico $100 · Madero / refineria $150 · Altamira $200</p>
+  <p class="zonas">Local Pako: <a href="https://maps.app.goo.gl/qnAmkb4VCYwYKSan8?g_st=aw" target="_blank" rel="noopener">ver mapa</a></p>
 </section>
 <section id="catalogo" class="grid"></section>
 <div class="drawer" id="drawer" onclick="if(event.target===this)closeCart()">
@@ -91,6 +92,21 @@ footer a{color:var(--rose-d);text-decoration:none;font-weight:600}
 <button class="ghost" type="button" onclick="abrirMapa()">Abrir mapa</button>
 <p class="note" id="mapStatus">Direccion + hora. El mapa se manda al chofer.</p>
 </div>
+<div id="pickupBox" style="display:none">
+  <div class="paybox">
+    <b>Recoger en el local de Pako</b><br>
+    <a href="https://maps.app.goo.gl/qnAmkb4VCYwYKSan8?g_st=aw" target="_blank" rel="noopener">Abrir ubicacion del local</a>
+  </div>
+  <label class="zona"><input type="checkbox" id="pasaLocal"> Confirmo que voy a pasar al local</label>
+  <input id="horaPickup" list="horasPickup" placeholder="Hora en la que pasarias"/>
+  <datalist id="horasPickup">
+    <option value="09:00-12:00"></option>
+    <option value="12:00-15:00"></option>
+    <option value="15:00-18:00"></option>
+    <option value="18:00-21:00"></option>
+  </datalist>
+  <p class="note">Pako recibe: confirmacion + tu nombre + tu numero + la hora.</p>
+</div>
 <textarea id="nota" rows="2" placeholder="Dedicatoria (opcional)"></textarea>
 <div class="paybox">
   <b>Pago Banorte</b><br>
@@ -111,13 +127,14 @@ footer a{color:var(--rose-d);text-decoration:none;font-weight:600}
 </div>
 </div>
 <footer>
-  Yufraka · Tampico, Madero y Altamira<br>
+  Yufraka · Local Pako <a href="https://maps.app.goo.gl/qnAmkb4VCYwYKSan8?g_st=aw" target="_blank" rel="noopener">mapa</a><br>
   Pagina elaborada por <a href="https://kaymaxllc.com" target="_blank" rel="noopener">KAYMAX</a>
 </footer>
 <script>
 const CFG={
   wa:"5218341383407",
   site: location.origin,
+  localMap:"https://maps.app.goo.gl/qnAmkb4VCYwYKSan8?g_st=aw",
   banorte:{titular:"Francisco Cruz",cuenta:"4189140077142338"},
   envio:{tampico:100,madero:150,altamira:200}
 };
@@ -158,16 +175,21 @@ function dirTexto(){return document.getElementById("dir").value.trim()}
 function recv(){return document.getElementById("recv").value.trim()}
 function rtel(){return document.getElementById("rtel").value.trim()}
 function hora(){return document.getElementById("hora").value}
+function horaPickup(){return document.getElementById("horaPickup").value.trim()}
 function ticketUrl(order){
   const i=order.items.map(x=>x.id+":"+x.qty).join(",");
+  const lugar=order.fulfillment==="local"?("Local Pako "+CFG.localMap):(order.ciudad+" "+(order.dir||""));
+  const quien=order.fulfillment==="local"?order.nombre:order.recv;
+  const tel=order.fulfillment==="local"?order.tel:order.rtel;
+  const hr=order.fulfillment==="local"?order.horaPickup:order.hora;
   return CFG.site+"/pako.html?f="+encodeURIComponent(order.id)
     +"&w="+encodeURIComponent(order.when)
     +"&p="+(order.pago==="confirmado"?"ok":"no")
     +"&i="+encodeURIComponent(i)
-    +"&recv="+encodeURIComponent(order.recv||"")
-    +"&rtel="+encodeURIComponent(order.rtel||"")
-    +"&dir="+encodeURIComponent((order.ciudad?order.ciudad+" ":"")+(order.dir||""))
-    +"&hora="+encodeURIComponent(order.hora||"");
+    +"&recv="+encodeURIComponent(quien||"")
+    +"&rtel="+encodeURIComponent(tel||"")
+    +"&dir="+encodeURIComponent(lugar)
+    +"&hora="+encodeURIComponent(hr||"");
 }
 function mapaUrl(){
   if(pin) return "https://www.google.com/maps?q="+pin.lat+","+pin.lng;
@@ -202,10 +224,12 @@ function syncPago(){
   document.getElementById("refpago").style.display=pagoEstado()==="ya"?"block":"none";
 }
 function syncFul(){
+  const envioOn=fulfillment()==="envio";
   document.getElementById("env").textContent=money(envio());
-  document.getElementById("envLabel").textContent=fulfillment()==="envio"?"Envio":"Recoleccion";
-  document.getElementById("geoBox").style.display=fulfillment()==="envio"?"block":"none";
-  document.getElementById("zonaFarWrap").style.display=(fulfillment()==="envio" && ciudad()==="Tampico")?"block":"none";
+  document.getElementById("envLabel").textContent=envioOn?"Envio":"Recoleccion";
+  document.getElementById("geoBox").style.display=envioOn?"block":"none";
+  document.getElementById("pickupBox").style.display=envioOn?"none":"block";
+  document.getElementById("zonaFarWrap").style.display=(envioOn && ciudad()==="Tampico")?"block":"none";
   document.getElementById("sub").textContent=money(subtotal());
   document.getElementById("tot").textContent=money(total());
   syncPago();
@@ -214,9 +238,10 @@ function openCart(){document.getElementById("drawer").classList.add("open")}
 function closeCart(){document.getElementById("drawer").classList.remove("open")}
 function cancelarPedido(){
   cart=[];saveCart();pin=null;
-  ["nombre","tel","dir","nota","refpago","recv","rtel"].forEach(function(id){document.getElementById(id).value="";});
+  ["nombre","tel","dir","nota","refpago","recv","rtel","horaPickup"].forEach(function(id){document.getElementById(id).value="";});
   document.getElementById("hora").value="";
   document.getElementById("zonaFar").checked=false;
+  document.getElementById("pasaLocal").checked=false;
   closeCart();
 }
 function valid(){
@@ -227,6 +252,9 @@ function valid(){
     if(!rtel()){alert("Telefono de quien recibe");return false}
     if(!dirTexto()){alert("Ubicacion de entrega");return false}
     if(!hora()){alert("Hora de entrega");return false}
+  } else {
+    if(!document.getElementById("pasaLocal").checked){alert("Confirma que vas a pasar al local");return false}
+    if(!horaPickup()){alert("Hora en la que pasarias");return false}
   }
   if(pagoEstado()==="ya" && !document.getElementById("refpago").value.trim()){alert("Pon la referencia o los ultimos 4");return false}
   return true;
@@ -246,10 +274,11 @@ function pagarWhatsApp(){
     recv:recv(),
     rtel:rtel(),
     hora:hora(),
+    horaPickup:horaPickup(),
     ciudad:ciudad(),
     dir:dirTexto(),
     zonaFar:zonaFar(),
-    mapa:fulfillment()==="envio"?mapaUrl():"",
+    mapa:fulfillment()==="envio"?mapaUrl():CFG.localMap,
     nota:nota,
     pago:pagado?"confirmado":"pendiente",
     ref:ref,
@@ -260,18 +289,17 @@ function pagarWhatsApp(){
   localStorage.setItem("yu_last",JSON.stringify({id:order.id,total:order.total}));
   const nombres=order.items.map(i=>i.qty+"x "+i.name).join("%0A");
   const ticket=ticketUrl(order);
-  const mapa=order.mapa?("%0AMapa: "+order.mapa):"";
-  const zona=order.fulfillment==="envio"?("Envio "+order.ciudad+(order.zonaFar?" (lejos/refineria)":"")+" "+money(order.envio)):"Recoger";
+  const zona=order.fulfillment==="envio"?("Envio "+order.ciudad+(order.zonaFar?" (lejos/refineria)":"")+" "+money(order.envio)):"CLIENTE PASA AL LOCAL";
   const entrega=order.fulfillment==="envio"
-    ?("%0AENTREGAR A: "+order.recv+"%0ATel quien recibe: "+order.rtel+"%0AUbicacion: "+order.ciudad+" "+order.dir+"%0AHora: "+order.hora)
-    :"";
+    ?("%0AENTREGAR A: "+order.recv+"%0ATel quien recibe: "+order.rtel+"%0AUbicacion: "+order.ciudad+" "+order.dir+"%0AHora: "+order.hora+"%0AMapa: "+order.mapa)
+    :("%0ACONFIRMA QUE PASA AL LOCAL%0ACliente: "+order.nombre+"%0ANumero: "+order.tel+"%0AHora en que pasa: "+order.horaPickup+"%0AMapa local Pako: "+CFG.localMap);
   const pago=pagado?("%0ACONFIRMACION DE PAGO Ref "+ref+" — Pako ARMA"):("%0APAGO PENDIENTE — no armar");
   const ded=nota?("%0ADedicatoria: "+nota):"";
   const text=encodeURIComponent(
     "PAKO toca para ver la FOTO:%0A"+ticket+
     "%0A%0AARMAR:%0A"+nombres+
     "%0AFolio "+order.id+"%0A"+zona+" - "+order.when+
-    entrega+mapa+ded+pago+
+    entrega+ded+pago+
     "%0ATotal "+money(order.total)+"%0APaga: "+order.nombre+" "+order.tel
   );
   cart=[];saveCart();
