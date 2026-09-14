@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>Pako · Armar este ramo</title>
+<style>
+body{font-family:sans-serif;background:#111;color:#fff;margin:0;padding:16px}
+h1{font-size:22px;margin:0 0 8px}
+.meta{color:#ccc;margin-bottom:16px;font-size:15px}
+.item{background:#1c1c1c;border-radius:16px;overflow:hidden;margin:0 0 18px}
+.item img{width:100%;display:block;max-height:70vh;object-fit:contain;background:#000}
+.cap{padding:12px 14px;font-size:18px}
+.qty{color:#f3c;font-weight:700}
+a{color:#f6b}
+</style>
+</head>
+<body>
+<h1>Pako · Armar este ramo</h1>
+<div class="meta" id="meta"></div>
+<div id="list"></div>
+<script>
+const CATALOG={
+"r50":{name:"50 rosas rojas",img:"fotos/foto_11.jpg"},
+"r24-follaje":{name:"24 rosas rojas con follaje",img:"fotos/foto_02.jpg"},
+"r50-nube":{name:"50 rosas rojas con nube",img:"fotos/foto_03.jpg"},
+"r12":{name:"12 rosas rojas",img:"fotos/foto_06.jpg"},
+"rosas-pink":{name:"24 rosas rosas con nube",img:"fotos/foto_04.jpg"},
+"tricolor":{name:"Ramo tricolor",img:"fotos/foto_07.jpg"},
+"pink-astro":{name:"24 rosas rosas con follaje",img:"fotos/foto_10.jpg"},
+"girasoles":{name:"12 gerberas amarillas",img:"fotos/foto_45.jpg"},
+"r100":{name:"100 rosas rojas",img:"fotos/foto_100.jpg"},
+"rojas-astro":{name:"Rosas rojas con astromelia",img:"fotos/foto_101.jpg"},
+"corona":{name:"50 rosas con nube y corona",img:"fotos/foto_102.jpg"}
+};
+const q=new URLSearchParams(location.search);
+const folio=q.get("f")||"";
+const when=q.get("w")||"";
+const pago=q.get("p")||"";
+const items=(q.get("i")||"").split(",").filter(Boolean);
+document.getElementById("meta").innerHTML=
+  (folio?("Folio "+folio+"<br>"):"")+
+  (when?("Para: "+when+"<br>"):"")+
+  (pago==="ok"?"PAGO CONFIRMADO — arma ya":"PAGO PENDIENTE — no armes hasta el deposito");
+document.getElementById("list").innerHTML=items.map(raw=>{
+  const [id,qty]=raw.split(":");
+  const p=CATALOG[id]||{name:id,img:"fotos/foto_01.jpg"};
+  return "<div class='item'><img src='"+p.img+"' alt='"+p.name+"'/><div class='cap'><span class='qty'>"+(qty||1)+"x</span> "+p.name+"</div></div>";
+}).join("") || "<p>No hay ramos en este ticket.</p>";
+</script>
+</body>
+</html>
