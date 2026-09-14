@@ -7,7 +7,7 @@
 <style>
 body{font-family:sans-serif;background:#111;color:#fff;margin:0;padding:16px}
 h1{font-size:22px;margin:0 0 8px}
-.meta{color:#ccc;margin-bottom:16px;font-size:15px}
+.meta{color:#ccc;margin-bottom:16px;font-size:15px;line-height:1.5}
 .item{background:#1c1c1c;border-radius:16px;overflow:hidden;margin:0 0 18px}
 .item img{width:100%;display:block;max-height:70vh;object-fit:contain;background:#000}
 .cap{padding:12px 14px;font-size:18px}
@@ -16,7 +16,7 @@ a{color:#f6b}
 </style>
 </head>
 <body>
-<h1>Pako · Armar este ramo</h1>
+<h1>Pako · Armar y entregar</h1>
 <div class="meta" id="meta"></div>
 <div id="list"></div>
 <script>
@@ -37,11 +37,19 @@ const q=new URLSearchParams(location.search);
 const folio=q.get("f")||"";
 const when=q.get("w")||"";
 const pago=q.get("p")||"";
+const recv=q.get("recv")||"";
+const rtel=q.get("rtel")||"";
+const dir=q.get("dir")||"";
+const hora=q.get("hora")||"";
 const items=(q.get("i")||"").split(",").filter(Boolean);
 document.getElementById("meta").innerHTML=
-  (folio?("Folio "+folio+"<br>"):"")+
-  (when?("Para: "+when+"<br>"):"")+
-  (pago==="ok"?"PAGO CONFIRMADO — arma ya":"PAGO PENDIENTE — no armes hasta el deposito");
+  (folio?("<b>Folio</b> "+folio+"<br>"):"")+
+  (when?("<b>Dia</b> "+when+"<br>"):"")+
+  (hora?("<b>Hora de entrega</b> "+hora+"<br>"):"")+
+  (recv?("<b>Entregar a</b> "+recv+"<br>"):"")+
+  (rtel?("<b>Tel de quien recibe</b> "+rtel+"<br>"):"")+
+  (dir?("<b>Ubicacion</b> "+dir+"<br>"):"")+
+  (pago==="ok"?"<b>PAGO CONFIRMADO</b> — arma ya":"<b>PAGO PENDIENTE</b> — no armes hasta el deposito");
 document.getElementById("list").innerHTML=items.map(raw=>{
   const [id,qty]=raw.split(":");
   const p=CATALOG[id]||{name:id,img:"fotos/foto_01.jpg"};
